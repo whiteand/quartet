@@ -200,12 +200,10 @@ v.register('required', (_, { key, parent }) => parent.hasOwnProperty(key))
 
 const isObjectValidConfig = {
     theNumberOrString: ['number', 'string'],
-    // all elements of array will be treated as possible variants (OR)
     theString: 'string',
     theArrayOfNumbers: v.arrayOf('number'),
     theNull: 'null',
     theRequiredUndefinedOrNumber: [['required', ['undefined', 'number']]],
-    // but if the element of array is array itself - all elements of it will be treated as required validations (AND)
     theObject: {
         innerProp: 'number'
     }
