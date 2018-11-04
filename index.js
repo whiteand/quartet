@@ -15,7 +15,7 @@ const objectCheck = (configObj, registered) => (obj, ...parents) => {
   return Object.entries(configObj)
       .every(([key, innerConfig]) => {
         const value = obj[key]
-        return where(innerConfig, registered)(value, { key, value: obj }, ...parents)
+        return where(innerConfig, registered)(value, { key, parent: obj }, ...parents)
       })
 }
 // Or
@@ -104,10 +104,10 @@ const getDefaultConfigs = func => ({
     console.log({ value, parents })
     return true
   },
-  'required': (_, parent) => {
-    if (!parent) return true
-    const { key, value } = parent
-    return value.hasOwnProperty(key)
+  'required': (_, parentKeyValue) => {
+    if (!parentKeyValue) return true
+    const { key, parent } = parentKeyValue
+    return parent.hasOwnProperty(key)
   }
 })
 
