@@ -215,6 +215,10 @@ v(isObjectValidConfig)(obj)
 
 You see how do we use `v.arrayOf` in example above. You can use it too! It takes `quartet` config and returns validation function that will be used as validator of array.
 
+`v.dictionaryOf` takes `quartet` config for checking values of object. Returns function that validates object(dictionary).
+
+`v.keys` takes `quartet` config for checking keys of object. Returns function that validates object.
+
 Also there is `v.required` method: takes properties to be required and returns function that validates object.
 ```javascript
 v.required('a', 'b')({a: 1}) // => false
