@@ -153,6 +153,10 @@ var newContext = (registered) => {
       return (obj, ...parents) => Object.entries(obj)
         .every(([key, value]) => isValidElement(value, { key, parent: obj }, ...parents))
     },
+    keys(config) {
+      const isValidKey = func(config)
+      return obj => Object.keys(obj).every(isValidKey)
+    },
     newContext
   }
   for (const [methodName, method] of Object.entries(methods)) {
