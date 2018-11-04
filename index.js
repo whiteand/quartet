@@ -142,6 +142,12 @@ var newContext = (registered) => {
     required(...propNames) {
       return obj => propNames.every(prop => obj.hasOwnProperty(prop))
     },
+    arrayOf(config) {
+      const isValidElement = func(config)
+      return (arr, ...parents) => Array.isArray(arr) && arr.every((el, i, a) => {
+        return isValidElement(el, { key: i, parent: a }, ...parents)
+      })
+    },
     newContext
   }
   for (const [methodName, method] of Object.entries(methods)) {
