@@ -23,6 +23,7 @@ There four types of validations:
   using `and` and/or `or` logic  operations)
 
  **Validation predicates**
+ 
  It's maybe the simplest type of validations. So go to examples:
  If we want to validate even number we can just write:
  ```javascript
