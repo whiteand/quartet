@@ -184,11 +184,21 @@ var newContext = registered => {
       return obj => Object.keys(obj).every(isValidKey);
     },
     throwError(config, errorMessage = "Validation error") {
+      if (!["string", "function"].includes(typeof errorMessage)) {
+        throw new TypeError(
+          "errorMessage must be a string, or function that returns string"
+        );
+      }
       const isValid = func(config);
       return obj => {
         if (isValid(obj)) return obj;
         if (typeof errorMessage === "function") {
           errorMessage = errorMessage(obj);
+          if (typeof errorMessage !== "string") {
+            throw new TypeError(
+              "errorMessage must be a string, or function that returns string"
+            );
+          }
         }
         throw new TypeError(errorMessage);
       };
