@@ -15,7 +15,7 @@ const v = require('quartet')
 
 **Types of validations**
 
-There four types of validations:
+There are four types of validations:
 - validation predicates (function that returns boolean value)
 - object validations (predicates for keys and values in object)
 - known to everybody (registered)
@@ -37,8 +37,8 @@ There four types of validations:
  // or
  const isTwoEven = v(x => x % 2 === 0)(2)
  ```
- As you see `quartet` can take predicate function as a parameter. The first argument of the function - is the value to be validate. (There are other arguments, but this is different story)
- It seems to be - not necessary to use `quartet` for such examples. So we should go deeper to see full beauty of validation!
+ As you see `quartet` can take predicate function as a parameter. The first argument of the function is the value to be validate. (There are other arguments, but this is a different story)
+ It seems to be not necessary to use `quartet` for such examples. So we should go deeper to see full beauty of validation!
  
  **Object validation**
  
@@ -93,17 +93,17 @@ There four types of validations:
  const isObjectValid = v(isObjectValidConfig)
  const isValid = isObjectValid(obj)
  ```
- As you can see `quartet` also can takes an object as a config. All values passed to resulting validation function must be an object. All properties - must be validated using validation predicates.
+ As you can see `quartet` also can takes an object as a config. All values passed to resulting validation function must be an object. All properties must be validated using validation predicates.
  
  But there is some new in this example. Let's look at validation for `theUndefined` property: 
  ```javascript
  theUndefined: (value, { key, parent }) =>
      parent.hasOwnProperty(key) && value === undefined
 ```
-Predicate takes not only the value to be validated. It takes all parents in hierarchy of the object. It can be used for such checking of required field.
+Predicate takes not only the value to be validated. It takes all parents in hierarchy of the object. It can be used for a such checking of required field.
 Also you can use values of other properties contained in the parent.
 
-You can do any validation you want using all parents of the value, because has such specifiation:
+You can do any validation you want using all parents of the value, because has a such specifiation:
 ```javascript
 function predicate(
   valueToValidate,
@@ -152,7 +152,7 @@ This complexity is bad. It's scary thing that people hate.
 Complexity can be defeated by _composition_.
 
 We use combinators for creating composition:
-It uses such syntax:
+It uses a such syntax:
 ```javascript
 [
     orConfig,
@@ -215,11 +215,13 @@ v(isObjectValidConfig)(obj)
 
 You see how do we use `v.arrayOf` in example above. You can use it too! It takes `quartet` config and returns validation function that will be used as validator of array.
 
-`v.dictionaryOf` takes `quartet` config for checking values of object. Returns function that validates object(dictionary).
+`v.dictionaryOf(config: string|function|object)` takes `quartet` config for checking values of object. Returns function that validates object(dictionary).
 
-`v.keys` takes `quartet` config for checking keys of object. Returns function that validates object.
+`v.keys(config: string|function|object)` takes `quartet` config for checking keys of object. Returns function that validates object.
 
-Also there is `v.required` method: takes properties to be required and returns function that validates object.
+`v.throwError(config: string|function|object, errorMessage: string|function(obj): string)` takes config and returns function that throws an error when object is not valid. Returns object otherwise (for using in pipes of calculations)
+
+Also there is `v.required(...propNames)` method: takes properties to be required and returns function that validates object.
 ```javascript
 v.required('a', 'b')({a: 1}) // => false
 v.required('a', 'b')({a: 1, b: 2}) // => true
@@ -234,7 +236,7 @@ newV('number')(2) // => TypeError: Reference to not registered config: number
 
 **Default registered validators**
 
-There is such registered validators by default:
+There are such registered validators by default:
 
 |      name      |                   condition                  |
 |:--------------:|:--------------------------------------------:|
@@ -250,7 +252,7 @@ There is such registered validators by default:
 | 'non-negative' |                 `x => x >= 0`                |
 | 'non-positive' |                 `x => x <= 0`                |
 |      'log'     | returns `true` and logs value and parents    |
-|   'required'   | returns `true` - if parent has such property |
+|   'required'   | returns `true` - if parent has the property |
 |    'object!'   |  `x => typeof x === 'object' && x !== null`  |
 |    'object'    |          `x => typeof x === 'object'`        |
 |     'array'    |           `x => Array.isArray(x)`            |
