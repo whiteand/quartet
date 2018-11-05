@@ -110,7 +110,7 @@ const getDefaultConfigs = func => ({
   string: x => typeof x === "string",
   null: x => x === null,
   undefined: x => x === undefined,
-  nil: x => x !== null && x !== undefined,
+  nil: x => x === null || x === undefined,
   number: x => typeof x === "number",
   safeInteger: x => Number.isSafeInteger(x),
   finite: x => Number.isFinite(x),
