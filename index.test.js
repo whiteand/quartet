@@ -35,14 +35,14 @@ testValidator(
   "null default validator",
   v("null"),
   [null],
-  ["null", 0, undefined, {}, Symbol("null"), 0, false, true, [], [null]]
+  ["null", 0, undefined, {}, Symbol("null"), false, true, [], [null]]
 );
 
 testValidator(
   "undefined default validator",
   v("undefined"),
   [undefined],
-  ["undefined", 0, null, {}, Symbol("null"), 0, false, true, [], [undefined]]
+  ["undefined", 0, null, {}, Symbol("null"), false, true, [], [undefined]]
 );
 
 testValidator(
@@ -50,4 +50,30 @@ testValidator(
   v("nil"),
   [undefined, null],
   ["undefined", 0, {}, Symbol("null"), 0, false, true, [], [undefined], [null]]
+);
+testValidator(
+  "number default validator",
+  v("number"),
+  [1, -1, 1.2, NaN, 1 / 0, -1 / 0],
+  ["undefined", {}, Symbol("null"), false, true, [], [undefined], [null]]
+);
+
+testValidator(
+  "safeInteger default validator",
+  v("safeInteger"),
+  [1, -1],
+  [
+    1.2,
+    NaN,
+    1 / 0,
+    -1 / 0,
+    "undefined",
+    {},
+    Symbol("null"),
+    false,
+    true,
+    [],
+    [undefined],
+    [null]
+  ]
 );
