@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/whiteand/quartet.svg?branch=master)](https://travis-ci.org/whiteand/quartet)
+
 # quartet
 
 Library for validations: beautiful and convenient
