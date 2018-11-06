@@ -214,8 +214,8 @@ v.register("array", x => Array.isArray(x));
 v.register("string", x => typeof x === "string");
 v.register("object", x => typeof x === "object");
 v.register("undefined", x => x === undefined);
-v.register("null", x => x === null),
-  v.register("required", (_, { key, parent }) => parent.hasOwnProperty(key));
+v.register("null", x => x === null);
+v.register("required", (_, { key, parent }) => parent.hasOwnProperty(key));
 
 const isObjectValidConfig = {
   theNumberOrString: ["number", "string"],
