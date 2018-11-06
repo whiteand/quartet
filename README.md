@@ -234,7 +234,7 @@ v(isObjectValidConfig)(obj);
 
 `v.register(name: string, config: string|function|object)` added alias for validation. Throws error when name is already used for another validator.
 
-``v.override(name: string, config: string|function|object)`added alias for validation. Doesn't throw error when name is already used. Use it carefully, you can override something that used by somebody else. Better use`v.newContext({ name: config, ...})`.
+`v.override(name: string, config: string|function|object)`added alias for validation. Doesn't throw error when name is already used. Use it carefully, you can override something that used by somebody else. Better use`v.newContext({ name: config, ...})`.
 
 You see how do we use `v.arrayOf` in example above. You can use it too! It takes `quartet` config and returns validation function that will be used as validator of array.
 
