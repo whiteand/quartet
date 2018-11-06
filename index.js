@@ -149,6 +149,17 @@ var newContext = registered => {
       }
       checkRecursivity(config);
       validateConfig(config);
+      if (func.registered[name]) {
+        throw new TypeError("This name is already used for validator");
+      }
+      func.registered[name] = config;
+    },
+    override(name, config) {
+      if (typeof name !== "string") {
+        throw new TypeError("Name must be a string");
+      }
+      checkRecursivity(config);
+      validateConfig(config);
       func.registered[name] = config;
     },
     isValidConfig(config) {
