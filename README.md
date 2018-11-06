@@ -173,7 +173,7 @@ We use combinators for creating composition:
 It uses a such syntax:
 
 ```javascript
-[
+v([
     orConfig,
     orConfig2,
     orConfig3,
@@ -188,7 +188,7 @@ It uses a such syntax:
         ...
     ],
     ...
-]
+])
 ```
 
 So you can see that first level of nestedness is - OR operator. Second level - AND operator. Third - is OR operator and so on.
