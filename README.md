@@ -173,7 +173,7 @@ We use combinators for creating composition:
 It uses a such syntax:
 
 ```javascript
-[
+v([
     orConfig,
     orConfig2,
     orConfig3,
@@ -188,7 +188,7 @@ It uses a such syntax:
         ...
     ],
     ...
-]
+])
 ```
 
 So you can see that first level of nestedness is - OR operator. Second level - AND operator. Third - is OR operator and so on.
@@ -214,8 +214,8 @@ v.register("array", x => Array.isArray(x));
 v.register("string", x => typeof x === "string");
 v.register("object", x => typeof x === "object");
 v.register("undefined", x => x === undefined);
-v.register("null", x => x === null),
-  v.register("required", (_, { key, parent }) => parent.hasOwnProperty(key));
+v.register("null", x => x === null);
+v.register("required", (_, { key, parent }) => parent.hasOwnProperty(key));
 
 const isObjectValidConfig = {
   theNumberOrString: ["number", "string"],
