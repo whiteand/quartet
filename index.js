@@ -118,13 +118,14 @@ const getDefaultConfigs = func => ({
   safeInteger: x => Number.isSafeInteger(x),
   finite: x => Number.isFinite(x),
   positive: x => x > 0,
+  negative: x => x < 0,
+  "non-negative": x => x >= 0,
+  "non-positive": x => x <= 0,
   object: x => typeof x === "object",
   array: x => Array.isArray(x),
   "not-empty": x => !isEmpty(x),
   "object!": x => typeof x === "object" && x !== null,
-  negative: x => x < 0,
-  "non-negative": x => x >= 0,
-  "non-positive": x => x <= 0,
+  boolean: x => typeof x === "boolean",
   log: (value, ...parents) => {
     console.log({ value, parents });
     return true;
@@ -177,6 +178,15 @@ var newContext = registered => {
     },
     required(...propNames) {
       return obj => propNames.every(prop => obj.hasOwnProperty(prop));
+    },
+    requiredIf(config) {
+      const isRequired = func(config);
+      return (obj, ...parents) => {
+        if (isRequired(obj, ...parents)) {
+          return func("required")(obj, ...parents);
+        }
+        return true;
+      };
     },
     arrayOf(config) {
       const isValidElement = func(config);

@@ -1,10 +1,9 @@
-global.console = {
-  log: jest.fn()
-};
+global.console.log = jest.fn();
 expect.extend({
   toBeTrueValueOf(received, isValid, validatorName) {
     const pass = isValid(received) === true;
-    const message = () => `expected ${validatorName}(${received}) to be true`;
+    const message = () =>
+      `expected ${validatorName}(${JSON.stringify(received)}) to be true`;
     return {
       pass,
       message
@@ -12,7 +11,8 @@ expect.extend({
   },
   toBeFalseValueOf(received, isValid, validatorName) {
     const pass = isValid(received) === false;
-    const message = () => `expected ${validatorName}(${received}) to be false`;
+    const message = () =>
+      `expected ${validatorName}(${JSON.stringify(received)}) to be false`;
     return { pass, message };
   }
 });
@@ -236,6 +236,14 @@ test("log default validator", () => {
 });
 
 testValidator({
+  caption: "boolean default validator - not a properties",
+  isValid: v("boolean"),
+  trueValues: [true, false],
+  falseValues: [null, 0, "false", "true", undefined, [], {}],
+  validatorName: "boolean"
+});
+
+testValidator({
   caption: "required default validator - not a properties",
   isValid: v("required"),
   trueValues: [
@@ -257,4 +265,17 @@ test("required default validator - required properties", () => {
   expect(v({ a: [["required"]] })({})).toBe(false);
   expect(v({ a: [["required"]] })({ a: undefined })).toBe(true);
   expect(v({ a: [["required"]] })({ a: 1 })).toBe(true);
+});
+
+// METHODS
+
+testValidator({
+  caption: "requiredIf",
+  isValid: v({
+    hasB: "boolean",
+    b: v.requiredIf((_, { parent }) => parent.hasB)
+  }),
+  trueValues: [{ hasB: true, b: 1 }, { hasB: false }],
+  falseValues: [{ hasB: true }],
+  validatorName: "bObjValidator"
 });
