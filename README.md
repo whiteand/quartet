@@ -303,14 +303,27 @@ conditionalBValidator({ hasB: true, b: "present" }); // => true
 
 `v.regex(regex: RegExp)` returns validator that takes a string, and returns true if regex.test(string) returns true
 
-You can created `quartet` instance with your own registered validators using `v.newContext({ name: config, name2: config, ...})` method.
+You can created `quartet` instance with your own registered validators using
 
-You can take validator dictionary using `v.registered`
-
+```javascript
+  const v2 = v.newContext({
+    name: config1,
+    name2: config2,
+    // ...
+  }
+)
+```
+for example 
 ```javascript
 v("number")(2); // true
 const newV = v.newContext({});
 newV("number")(2); // => TypeError: Reference to not registered config: number
+```
+
+You can take validator dictionary using `v.registered`:
+```javascript
+const newV = v.newContext({ s: value => typeof value === 'string' })
+newV.registered // => { s: value => typeof value === 'string' }
 ```
 
 **Default registered validators**
