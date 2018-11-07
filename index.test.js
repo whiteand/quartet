@@ -46,12 +46,12 @@ testValidator({
     null,
     undefined,
     {},
-    Symbol("Andrew"),
+    Symbol("symbol"),
     0,
     false,
     true,
     [],
-    ["andfrew"]
+    ["symbol"]
   ]
 });
 
@@ -193,7 +193,7 @@ testValidator({
   caption: "object default validator",
   isValid: v("object"),
   trueValues: [null, {}, { a: 1 }, [], new String("123")],
-  falseValues: [1, "1", false, true, undefined, Symbol("andrew")]
+  falseValues: [1, "1", false, true, undefined, Symbol("symbol")]
 });
 
 testValidator({
@@ -236,11 +236,26 @@ test("log default validator", () => {
 });
 
 testValidator({
-  caption: "boolean default validator - not a properties",
+  caption: "boolean default validator",
   isValid: v("boolean"),
   trueValues: [true, false],
   falseValues: [null, 0, "false", "true", undefined, [], {}],
   validatorName: "boolean"
+});
+
+testValidator({
+  caption: "symbol default validator",
+  isValid: v("symbol"),
+  trueValues: [Symbol(), Symbol("symbol")],
+  falseValues: [null, 0, true, false, "false", "true", undefined, [], {}],
+  validatorName: `v("symbol")`
+});
+testValidator({
+  caption: "function default validator",
+  isValid: v("function"),
+  trueValues: [() => {}, function() {}, async function() {}],
+  falseValues: [null, 0, true, false, "false", "true", undefined, [], {}],
+  validatorName: `v("function")`
 });
 
 testValidator({
@@ -269,8 +284,22 @@ test("required default validator - required properties", () => {
 
 // METHODS
 
+test("requiredIf method: boolean argument", () => {
+  // condition variant
+  const aRequired = v({
+    a: v.requiredIf(true)
+  });
+  const aNotRequired = v({
+    a: v.requiredIf(false)
+  });
+  expect({ a: 1 }).toBeTrueValueOf(aRequired);
+  expect({ a: 1 }).toBeTrueValueOf(aNotRequired);
+  expect({}).toBeFalseValueOf(aRequired);
+  expect({}).toBeTrueValueOf(aNotRequired);
+});
+
 testValidator({
-  caption: "requiredIf",
+  caption: "requiredIf method: config argument",
   isValid: v({
     hasB: "boolean",
     b: v.requiredIf((_, { parent }) => parent.hasB)
@@ -278,4 +307,99 @@ testValidator({
   trueValues: [{ hasB: true, b: 1 }, { hasB: false }],
   falseValues: [{ hasB: true }],
   validatorName: "bObjValidator"
+});
+
+describe("min method", () => {
+  testValidator({
+    caption: "number",
+    isValid: v.min(5),
+    trueValues: [5, 6, 1 / 0],
+    falseValues: [4, 0, NaN, -1 / 0],
+    validatorName: "v.min(5)"
+  });
+  testValidator({
+    caption: "string",
+    isValid: v.min(5),
+    trueValues: ["12345", "123456"],
+    falseValues: ["1234", ""],
+    validatorName: "v.min(5)"
+  });
+  testValidator({
+    caption: "array",
+    isValid: v.min(5),
+    trueValues: [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6]],
+    falseValues: [[1, 2, 3, 4], []],
+    validatorName: "v.min(5)"
+  });
+  testValidator({
+    caption: "set",
+    isValid: v.min(5),
+    trueValues: [new Set([1, 2, 3, 4, 5]), new Set([1, 2, 3, 4, 5, 6])],
+    falseValues: [
+      new Set([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+      new Set()
+    ],
+    validatorName: "v.min(5)"
+  });
+  testValidator({
+    caption: "map",
+    isValid: v.min(5),
+    trueValues: [new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]])],
+    falseValues: [new Map(), new Map([[1, 1]])],
+    validatorName: "v.min(5)"
+  });
+});
+
+describe("max method", () => {
+  testValidator({
+    caption: "number",
+    isValid: v.max(5),
+    trueValues: [5, 4, -1 / 0],
+    falseValues: [6, NaN, 1 / 0],
+    validatorName: "v.max(5)"
+  });
+  testValidator({
+    caption: "string",
+    isValid: v.max(5),
+    trueValues: ["12345", "1234", ""],
+    falseValues: ["123456"],
+    validatorName: "v.max(5)"
+  });
+  testValidator({
+    caption: "array",
+    isValid: v.max(5),
+    trueValues: [[1, 2, 3, 4, 5], [1, 2, 3, 4], []],
+    falseValues: [[1, 2, 3, 4, 5, 6]],
+    validatorName: "v.max(5)"
+  });
+  testValidator({
+    caption: "set",
+    isValid: v.max(5),
+    trueValues: [
+      new Set([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+      new Set(),
+      new Set([1, 2, 3, 4, 5])
+    ],
+    falseValues: [new Set([1, 2, 3, 4, 5, 6])],
+    validatorName: "v.max(5)"
+  });
+  testValidator({
+    caption: "map",
+    isValid: v.max(5),
+    trueValues: [
+      new Map(),
+      new Map([[1, 1]]),
+      new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]])
+    ],
+    falseValues: [new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6]])],
+    validatorName: "v.max(5)"
+  });
+});
+
+testValidator({
+  caption: "regex method",
+  isValid: v.regex(/.abc./),
+  trueValues: [" abc ", "aabcdd", "aabcddddd"],
+  falseValues: ["abc ", "aabdd", "aaddddd"],
+  validatorName: `v.regex(/.abc./)`
 });

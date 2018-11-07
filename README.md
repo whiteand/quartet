@@ -1,6 +1,7 @@
 [![npm version](https://badge.fury.io/js/quartet.svg)](https://badge.fury.io/js/quartet)
 [![Build Status](https://travis-ci.org/whiteand/quartet.svg?branch=master)](https://travis-ci.org/whiteand/quartet)
 [![Known Vulnerabilities](https://snyk.io/test/github/whiteand/quartet/badge.svg?targetFile=package.json)](https://snyk.io/test/github/whiteand/quartet?targetFile=package.json)
+
 # quartet
 
 Library for validations: beautiful and convenient
@@ -237,7 +238,7 @@ v(isObjectValidConfig)(obj);
 
 `v.override(name: string, config: string|function|object)`added alias for validation. Doesn't throw error when name is already used. Use it carefully, you can override something that used by somebody else. Better use`v.newContext({ name: config, ...})`.
 
-You see how do we use `v.arrayOf` in example above. You can use it too! It takes `quartet` config and returns validation function that will be used as validator of array.
+`v.arrayOf(config: string|function|object)` Returns validator for array of elements that will be tested using `quartet` config passed as first parameter.
 
 `v.dictionaryOf(config: string|function|object)` takes `quartet` config for checking values of object. Returns function that validates object(dictionary).
 
@@ -252,7 +253,61 @@ v.required("a", "b")({ a: 1 }); // => false
 v.required("a", "b")({ a: 1, b: 2 }); // => true
 ```
 
-If you want to use your own registered validators you can overwrite default validators. Also you can created `quartet` instance without registered validators using `v.newContext` method.
+`v.requiredIf(condition: boolean)`
+
+`v.requiredIf(conditionConfig: string|function|object)`
+
+if `v(conditionConfig)(value, { key: key1, parent: parent1 }...)` then this field must be required.
+Also you can pass to it boolean value. That will be treated as condition.
+
+```javascript
+// boolean param variant
+const aRequired = v({
+  a: v.requiredIf(true)
+});
+const aNotRequired = v({
+  a: v.requiredIf(false)
+});
+aRequired({ a: 1 }); // => true
+aRequired({}); // => false
+aNotRequired({}); // => true
+
+// config variant
+const conditionalBValidator = v({
+  hasB: "boolean",
+  b: v.requiredIf((b, { parent }) => parent.hasB) // if hasB is true, then we
+});
+conditionalBValidator({ hasB: false }); // => true
+conditionalBValidator({ hasB: true }); // => false
+conditionalBValidator({ hasB: true, b: "present" }); // => true
+```
+
+`v.min(minValue)` returns validator for:
+
+- number must be greater or equal to minValue
+- array must have at least minValue elements
+- string must have at least minValue characters
+- set must have at least minValue elements
+- map must have at least minValue key-value pairs
+
+`v.max(maxValue)` returns validator for:
+
+- number must be less or equal to maxValue
+- array must have not more then maxValue elements
+- string must have not more then maxValue characters
+- set must have not more then maxValue elements
+- map must have not more then maxValue key-value pairs
+
+`v.not(config: string|function|object)`:
+
+- if v(config) returns truthy value, then v.not(config) return false
+- if v(config) returns falsy value, then v.not(config) reutrn true
+
+`v.regex(regex: RegExp)` returns validator that takes a string, and returns true if regex.test(string) returns true
+
+You can created `quartet` instance with your own registered validators using `v.newContext({ name: config, name2: config, ...})` method.
+
+You can take validator dictionary using `v.registered`
 
 ```javascript
 v("number")(2); // true
@@ -277,11 +332,13 @@ There are such registered validators by default:
 |   'negative'   |                  `x => x < 0`                  |
 | 'non-negative' |                 `x => x >= 0`                  |
 | 'non-positive' |                 `x => x <= 0`                  |
+|    'object'    |          `x => typeof x === 'object'`          |
+|   'object!'    |   `x => typeof x === 'object' && x !== null`   |
+|    'array'     |            `x => Array.isArray(x)`             |
+|  'not-empty'   | return `true` if value if not empty (see code) |
+|    'symbol'    |          `x => typeof x === 'symbol'`          |
+|   'function'   |         `x => typeof x === 'function'`         |
 |     'log'      |   returns `true` and logs value and parents    |
 |   'required'   |  returns `true` - if parent has the property   |
-|   'object!'    |   `x => typeof x === 'object' && x !== null`   |
-|    'object'    |          `x => typeof x === 'object'`          |
-|    'array'     |            `x => Array.isArray(x)`             |
-|  'not-empty':  | return `true` if value if not empty (see code) |
 
 So you can see that we shouldn't register own validators - if they are present by default. So example above can be rewritten without registering any of validators.

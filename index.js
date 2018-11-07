@@ -126,6 +126,8 @@ const getDefaultConfigs = func => ({
   "not-empty": x => !isEmpty(x),
   "object!": x => typeof x === "object" && x !== null,
   boolean: x => typeof x === "boolean",
+  symbol: x => typeof x === "symbol",
+  function: x => typeof x === "function",
   log: (value, ...parents) => {
     console.log({ value, parents });
     return true;
@@ -180,7 +182,8 @@ var newContext = registered => {
       return obj => propNames.every(prop => obj.hasOwnProperty(prop));
     },
     requiredIf(config) {
-      const isRequired = func(config);
+      const isRequired =
+        typeof config === "boolean" ? () => config : func(config);
       return (obj, ...parents) => {
         if (isRequired(obj, ...parents)) {
           return func("required")(obj, ...parents);
@@ -226,6 +229,46 @@ var newContext = registered => {
         }
         throw new TypeError(errorMessage);
       };
+    },
+    min(minValue) {
+      if (typeof minValue !== "number") {
+        throw new TypeError("minValue must be a number");
+      }
+      return value => {
+        switch (getType(value)) {
+          case "string":
+          case "array":
+            return value.length >= minValue;
+          case "number":
+            return value >= minValue;
+          case "set":
+          case "map":
+            return value.size >= minValue;
+        }
+      };
+    },
+    max(maxValue) {
+      if (typeof maxValue !== "number") {
+        throw new TypeError("maxValue must be a number");
+      }
+      return value => {
+        switch (getType(value)) {
+          case "string":
+          case "array":
+            return value.length <= maxValue;
+          case "number":
+            return value <= maxValue;
+          case "set":
+          case "map":
+            return value.size <= maxValue;
+        }
+      };
+    },
+    regex(regex, flags = "") {
+      if (!(regex instanceof RegExp)) {
+        throw new TypeError("Regex can takes only RegExp instances");
+      }
+      return str => regex.test(str);
     },
     not(config) {
       const isValid = func(config);
