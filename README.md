@@ -1,5 +1,6 @@
+[![npm version](https://badge.fury.io/js/quartet.svg)](https://badge.fury.io/js/quartet)
 [![Build Status](https://travis-ci.org/whiteand/quartet.svg?branch=master)](https://travis-ci.org/whiteand/quartet)
-
+[![Known Vulnerabilities](https://snyk.io/test/github/whiteand/quartet/badge.svg?targetFile=package.json)](https://snyk.io/test/github/whiteand/quartet?targetFile=package.json)
 # quartet
 
 Library for validations: beautiful and convenient
