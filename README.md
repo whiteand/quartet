@@ -257,9 +257,7 @@ v.required("a", "b")({ a: 1, b: 2 }); // => true
 
 `v.requiredIf(conditionConfig: string|function|object)`
 
-if `v(conditionConfig)(value, { key: key1, parent: parent1 }...)` then this field must be required.
-Also you can pass to it boolean value. That will be treated as condition.
-
+if `v(conditionConfig)` returns true, then this field will be required. See examples below.
 ```javascript
 // boolean param variant
 const aRequired = v({
