@@ -295,7 +295,7 @@ var newContext = registered => {
         }
       };
     },
-    regex(regex, flags = "") {
+    regex(regex) {
       if (!(regex instanceof RegExp)) {
         throw new TypeError("Regex can takes only RegExp instances");
       }
