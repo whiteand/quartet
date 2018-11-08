@@ -453,15 +453,15 @@ describe("explain", () => {
   });
   test("custom explanation - function", () => {
     v();
-    const explanationFunc = (value, { key }) =>
-      `wrong property: ${key}. Expected string, but ${typeof value} get`;
+    const explanationFunc = type => (value, { key }) =>
+      `wrong property: ${key}. Expected ${type}, but ${typeof value} get`;
     const isValidPerson = v({
-      name: v.explain("string", explanationFunc),
-      age: v.explain("number", explanationFunc)
+      name: v.explain("string", explanationFunc("string")),
+      age: v.explain("number", explanationFunc("number"))
     });
     expect(isValidPerson({ name: "andrew" })).toBe(false);
     expect(v.explanation).toEqual([
-      "wrong property: age. Expected string, but undefined get"
+      "wrong property: age. Expected number, but undefined get"
     ]);
 
     v();
@@ -474,7 +474,7 @@ describe("explain", () => {
     expect(isValidPerson({ name: 1, age: "1" })).toBe(false);
     expect(v.explanation).toEqual([
       "wrong property: name. Expected string, but number get",
-      "wrong property: age. Expected string, but string get"
+      "wrong property: age. Expected number, but string get"
     ]);
     v.override("prime", n => {
       if (n < 2) return false;

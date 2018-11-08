@@ -148,14 +148,14 @@ const getDefaultConfigs = func => ({
 var newContext = registered => {
   function func(config, registered = func.registered) {
     if (config === undefined) {
-      resetExplanation();
-      return func;
+      return resetExplanation();
     }
     checkRecursivity(config);
     return where(config, registered);
   }
   function resetExplanation() {
     func.explanation = [];
+    return func;
   }
   resetExplanation();
   const methods = {
@@ -213,7 +213,8 @@ var newContext = registered => {
         let isValid = true;
         for (let i = 0; i < arr.length; i++) {
           const el = arr[i];
-          if (!isValidElement(el, { key: i, parent: arr }, ...parents)) isValid = false;
+          if (!isValidElement(el, { key: i, parent: arr }, ...parents))
+            isValid = false;
         }
         return isValid;
       };
