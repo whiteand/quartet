@@ -248,10 +248,10 @@ var newContext = registered => {
         );
       }
       const isValid = func(config);
-      return obj => {
+      return (obj, ...parents) => {
         if (isValid(obj)) return obj;
         if (is(errorMessage)("function")) {
-          errorMessage = errorMessage(obj);
+          errorMessage = errorMessage(obj, ...parents);
           if (isnt(errorMessage)("string")) {
             throw new TypeError(
               "errorMessage must be a string, or function that returns string"
