@@ -320,10 +320,10 @@ isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 ```
 
 
-**```javascript
+**`
 v.throwError(config: Config, errorMessage: string|(function(value, ...parents: Parent): string)) =>
   (value: any, parent:Parent, grandParent: Parent, ...) => any
-```**
+`**
 `throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
 
 ```javascript
