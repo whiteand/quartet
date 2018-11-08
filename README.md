@@ -257,7 +257,7 @@ returns true if `obj` has all `requiredProps`.
   v.required('a', 'b')({a: 1}) // => false
 ```
 
-**``v.requiredIf :: (isRequired: boolean) => (value: any, ...parents: Parent) => boolean`**
+**`v.requiredIf :: (isRequired: boolean) => (value: any, ...parents: Parent) => boolean`**
 
 if `isRequired` is truthy, returns true only if parent has such property.
 
