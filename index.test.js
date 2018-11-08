@@ -524,10 +524,9 @@ describe("Test omitInvalidItems", () => {
       b: "2",
       c: 3
     };
-    const onlyNumberProperties = v.omitInvalidItems(
-      "number",
+    const onlyNumberProperties = v.omitInvalidItems("number")(
       invalidNumberDict
-    )(invalidNumberDict);
+    );
     expect(onlyNumberProperties).toEqual({
       a: 1,
       c: 3
