@@ -403,3 +403,189 @@ testValidator({
   falseValues: ["abc ", "aabdd", "aaddddd"],
   validatorName: `v.regex(/.abc./)`
 });
+
+describe("explain", () => {
+  test("without explanation", () => {
+    const isValid = v().explain("number");
+    isValid(1);
+    expect(v.explanation).toEqual([]);
+    isValid(2);
+    expect(v.explanation).toEqual([]);
+  });
+  test("default explanation", () => {
+    const isValid = v().explain("number");
+    isValid("123");
+    expect(v.explanation).toEqual([{ value: "123", parents: [] }]);
+  });
+  test("default explanation - resetExplanation method", () => {
+    const isValid = v().explain("number");
+    isValid(null);
+    expect(v.explanation).toEqual([{ value: null, parents: [] }]);
+    v.resetExplanation(); // The same as v()
+    v.explain("number")(1);
+    expect(v.explanation).toEqual([]);
+  });
+  test("default explanation - resetExplanation alias v()", () => {
+    v()("number")(null);
+    v()("number")(1);
+    expect(v.explanation).toEqual([]);
+  });
+  test("custom explanation - not function", () => {
+    v.resetExplanation();
+    const isValidPerson = v({
+      name: v.explain("string", "wrong name"),
+      age: v.explain("number", "wrong age")
+    });
+    isValidPerson({
+      name: "andrew"
+    });
+    expect(v.explanation).toEqual(["wrong age"]);
+
+    v();
+    isValidPerson({
+      age: 12
+    });
+    expect(v.explanation).toEqual(["wrong name"]);
+
+    v();
+    isValidPerson({});
+    expect(v.explanation).toEqual(["wrong name", "wrong age"]);
+  });
+  test("custom explanation - function", () => {
+    v();
+    const explanationFunc = (value, { key }) =>
+      `wrong property: ${key}. Expected string, but ${typeof value} get`;
+    const isValidPerson = v({
+      name: v.explain("string", explanationFunc),
+      age: v.explain("number", explanationFunc)
+    });
+    expect(isValidPerson({ name: "andrew" })).toBe(false);
+    expect(v.explanation).toEqual([
+      "wrong property: age. Expected string, but undefined get"
+    ]);
+
+    v();
+    isValidPerson({ age: 12 });
+    expect(v.explanation).toEqual([
+      "wrong property: name. Expected string, but undefined get"
+    ]);
+
+    v();
+    expect(isValidPerson({ name: 1, age: "1" })).toBe(false);
+    expect(v.explanation).toEqual([
+      "wrong property: name. Expected string, but number get",
+      "wrong property: age. Expected string, but string get"
+    ]);
+    v.override("prime", n => {
+      if (n < 2) return false;
+      if (n === 2) return true;
+      for (let i = 2; i * i <= n; i++) {
+        if (n % i === 0) return false;
+      }
+      return true;
+    });
+    v();
+    const arr = [1, 2, 3, 4, 5, 6, 7, 8];
+    const isArrayOfPrimes = v.arrayOf(
+      v.explain("prime", (value, { key }) => ({
+        key,
+        value
+      }))
+    );
+    expect(isArrayOfPrimes(arr)).toBe(false);
+    const notPrimes = v.explanation.map(({ value }) => value);
+    expect(notPrimes).toEqual([1, 4, 6, 8]);
+  });
+});
+
+describe("Test omitInvalidItems", () => {
+  test("omitInvalidItems(array)", () => {
+    const arr = [1, "2", 3, "4", 5];
+
+    const onlyNumbers = v.omitInvalidItems("number")(arr);
+    expect(onlyNumbers).toEqual([1, 3, 5]);
+
+    const onlyStrings = v.omitInvalidItems("string")(arr);
+    expect(onlyStrings).toEqual(["2", "4"]);
+
+    const arr2 = [0, 1, 5, 3, 4];
+    const isElementPlusIndexIsEven = (value, { key }) =>
+      (value + key) % 2 === 0;
+    expect(v.omitInvalidItems(isElementPlusIndexIsEven)(arr2)).toEqual([
+      0,
+      1,
+      3,
+      4
+    ]);
+  });
+  test("omitInvalidItems(object)", () => {
+    const invalidNumberDict = {
+      a: 1,
+      b: "2",
+      c: 3
+    };
+    const onlyNumberProperties = v.omitInvalidItems(
+      "number",
+      invalidNumberDict
+    )(invalidNumberDict);
+    expect(onlyNumberProperties).toEqual({
+      a: 1,
+      c: 3
+    });
+    const isKeyPlusValueHasLengthLessThen5 = (value, { key }) => {
+      return (key + value).length < 5;
+    };
+
+    const keys = {
+      an: "ap",
+      an2: "apple",
+      "1a": "96"
+    };
+    expect(v.omitInvalidItems(isKeyPlusValueHasLengthLessThen5)(keys)).toEqual({
+      an: "ap",
+      "1a": "96"
+    });
+  });
+});
+
+describe("omitInvalidProps", () => {
+  test("omitInvalidProps", () => {
+    const obj = {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4,
+      e: 5,
+      f: 6,
+      g: 7
+    };
+    v.override("prime", n => {
+      if (n < 2) return false;
+      if (n === 2) return true;
+      for (let i = 2; i * i <= n; i++) {
+        if (n % i === 0) return false;
+      }
+      return true;
+    });
+
+    const onlyPrimesAndF = v.omitInvalidProps({
+      a: "prime",
+      b: "prime",
+      c: "prime",
+      d: "prime",
+      e: "prime",
+      g: "prime"
+    });
+    expect(onlyPrimesAndF(obj)).toEqual({
+      b: 2,
+      c: 3,
+      e: 5,
+      f: 6,
+      g: 7
+    });
+  });
+});
+test("validOr", () => {
+  expect(v.validOr("number", 0)(123)).toBe(123);
+  expect(v.validOr("number", 0)("123")).toBe(0);
+});
