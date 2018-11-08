@@ -238,6 +238,8 @@ v(isObjectValidConfig)(obj);
 ```javascript
 type Config = function|string|object|Array`
 type Parent = { key: string|number, parent: object|array }
+type Validator = function(value: any, parent: Parent, grandParent: Parent, grandGrandParent: Parent, ...) => boolean
+type FromValidable<T> = function(value: any, parent: Parent, grandParent: Parent, grandGrandParent: Parent, ...) => T
 ```
 
 **`v.registered :: Object<configName, config: Config>`**
@@ -257,9 +259,9 @@ returns true if `obj` has all `requiredProps`.
   v.required('a', 'b')({a: 1}) // => false
 ```
 
-**`v.requiredIf :: (isRequired: boolean) => (value: any, ...parents: Parent) => boolean`**
+**`v.requiredIf :: (isRequired: boolean) => Validator`**
 
-if `isRequired` is truthy, returns true only if parent has such property.
+if `isRequired` is truthy, validator returns true only if parent has such property.
 
 ```javascript
 const aRequired = v({
@@ -274,7 +276,7 @@ aNotRequired({}) // => true
 aRequired({ a: 1 }) // => false
 ```
 
-**`v.requiredIf :: (config: Config) => (value: any, ...parents: Parent) => boolean`**
+**`v.requiredIf :: (config: Config) => Validator(value, ...parents)`**
 if `v(config)(value, ...parents)` returns true, then this field treated as required.
 
 ```javascript
@@ -321,8 +323,7 @@ isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 
 
 **`
-v.throwError(config: Config, errorMessage: string|(function(value, ...parents: Parent): string)) =>
-  (value: any, parent:Parent, grandParent: Parent, ...) => any
+v.throwError(config: Config, errorMessage: string|FromValidable<string>) => FromValidable<any>
 `**
 `throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
 
@@ -425,14 +426,49 @@ v(/abc/)('  abcd') // => true
 v(/^abc/)('  abcd') // => false
 ```
 
-**`v.explain(config: Config, getExplanation: any|function) => (obj, ...parents) => boolean`**
-returns true if `obj` isValid (using value and parents passed into validation described by `config`)
-returns false, and push
-```javascript
-getExplanation(value, parent: Parent, grandParent: Parent, ...)
-```
+**`v.explain(config: Config, getExplanation: any|function) => Validator`**
+Validator returns true if `obj` isValid (using value and parents passed into validation described by `config`).
+Validator returns false, and push `getExplanation(value, parent: Parent, grandParent: Parent, ...)`
 to `v.explanation`. If getExplanation is not a fucntion it will be pushed as explanation into `v.explanation`
 
+```javascript
+v.resetExplanation()
+const isValid = v.explain("number", value => value);
+isValid(1) // => true
+v.explanation // => []
+isValid(null)
+v.explanation // => [NULL]
+isValid(2)
+v.explanation // => [NULL]
+v.resetExplanation()
+v.explanation // => []
+```
+
+**`not(config: Config) => Validator`** Returns opposite validator.
+
+**`omitInvalidItems(config) => (collection: Array|object<key, value>) => Array|object<key, value>`**
+
+If `collection` is array, the returs new array without invalid values.
+
+If `collection` is object, then returns new object without invalid values.
+
+```javascript
+const arr = [1, "2", 3, "4", 5];
+
+const onlyNumbers = v.omitInvalidItems("number")(arr); // [1, 3, 5]
+const onlyStrings = v.omitInvalidItems("string")(arr); // ["2", "4"]
+
+const invalidNumberDict = {
+  a: 1,
+  b: "2",
+  c: 3
+};
+const onlyNumberProperties = v.omitInvalidItems("number")(
+  invalidNumberDict
+);
+
+onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
+```
 
 **Default registered validators**
 
