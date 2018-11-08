@@ -49,11 +49,12 @@ If we need explanation, then we must use explanation schema.
 ```javascript
 const EXPLANATION = {
   NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
-  USER_NAME: 'username', // as an explanation we will use 
+  USER_NAME: 'username', // as an explanation we will use propname, just for example
   PASSWORD: 'password', 
   ACCESS_TOKEN: 'access_token',
   BIRTH_YEAR: 'birth_year',
-  EMAIL: email => ({ code: 'email', oldValue: email }) // explanation can get actual value
+  // explanation also can be a function that get actual value (and even more...)
+  EMAIL: email => ({ code: 'email', oldValue: email }) 
 }
 // v.explain takes schema and explanation
 const explanationSchema = v.explain({
