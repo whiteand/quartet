@@ -16,11 +16,16 @@ let v = quartet() // creating validator generator
 const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
 
 const schema = {
-  username: [['string', v.min(3), v.max(30)]], // string with length from 3 to 30
-  password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], // string with special pattern
-  access_token: ['string', 'number'], // string or number
-  birthyear: [['safe-integer', v.min(1900), v.max(2013)]], // integer number from 1900 to 2013
-  email: [['string', v.regex(emailRegex)]] // email
+  // string with length from 3 to 30
+  username: [['string', v.min(3), v.max(30)]], 
+  // string with special pattern
+  password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], 
+  // string or number
+  access_token: ['string', 'number'],
+  // integer number from 1900 to 2013
+  birthyear: [['safe-integer', v.min(1900), v.max(2013)]], 
+  // email
+  email: [['string', v.regex(emailRegex)]]
 }
 
 const isValidObj = v(schema)
@@ -49,7 +54,8 @@ If we need explanation, then we must use explanation schema.
 ```javascript
 const EXPLANATION = {
   NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
-  USER_NAME: 'username', // as an explanation we will use propname, just for example
+  // as an explanation we will use propname, just for example
+  USER_NAME: 'username', 
   PASSWORD: 'password', 
   ACCESS_TOKEN: 'access_token',
   BIRTH_YEAR: 'birth_year',
@@ -70,11 +76,14 @@ const explanationSchema = v.explain({
 const isValidWithExplanation = v(explanationSchema)
 v.resetExplanation() // or just v()
 const isValid = isValidWithExplanation({
-  username: 'an', // wrong
+  // wrong
+  username: 'an', 
   password: '123456qQ',
-  access_token: null, // wrong
+  // wrong
+  access_token: null, 
   birthyear: 1996,
-  email: '213' // wrong
+  // wrong
+  email: '213' 
 }) // => true
 
 // all explanations will be saved into v.explanation
