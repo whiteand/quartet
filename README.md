@@ -232,99 +232,207 @@ const isObjectValidConfig = {
 v(isObjectValidConfig)(obj);
 ```
 
-**Useful methods**
+**Methods**
 
-`v.register(name: string, config: string|function|object)` added alias for validation. Throws error when name is already used for another validator.
-
-`v.override(name: string, config: string|function|object)`added alias for validation. Doesn't throw error when name is already used. Use it carefully, you can override something that used by somebody else. Better use`v.newContext({ name: config, ...})`.
-
-`v.arrayOf(config: string|function|object)` Returns validator for array of elements that will be tested using `quartet` config passed as first parameter.
-
-`v.dictionaryOf(config: string|function|object)` takes `quartet` config for checking values of object. Returns function that validates object(dictionary).
-
-`v.keys(config: string|function|object)` takes `quartet` config for checking keys of object. Returns function that validates object.
-
-`v.throwError(config: string|function|object, errorMessage: string|function(obj): string)` takes config and returns function that throws an error when object is not valid. Returns object otherwise (for using in pipes of calculations)
-
-Also there is `v.required(...propNames)` method: takes properties to be required and returns function that validates object.
-
+**Types**
 ```javascript
-v.required("a", "b")({ a: 1 }); // => false
-v.required("a", "b")({ a: 1, b: 2 }); // => true
+type Config = function|string|object|Array`
+type Parent = { key: string|number, parent: object|array }
 ```
 
-`v.requiredIf(condition: boolean)`
+**`v.registered :: Object<configName, config: Config>`**
+returns object with registered configs
 
-`v.requiredIf(conditionConfig: string|function|object)`
+**`v.register :: (name: string, config: Config) => void`**
+make `name` alias for `config`. Throws error if alias is already used.
 
-if `v(conditionConfig)` returns true, then this field will be required. See examples below.
+**`v.override :: (name: string, config: Config) => void`**
+make `name` alias for `config`.
+
+**`v.required :: (...requiredProps: string) => (obj: object) => boolean`**
+returns true if `obj` has all `requiredProps`.
+
 ```javascript
-// boolean param variant
+  v.required('a', 'b')({a: 1, b: 2}) // => true
+  v.required('a', 'b')({a: 1}) // => false
+```
+
+**``v.requiredIf :: (isRequired: boolean) => (value: any, ...parents: Parent) => boolean`**
+
+if `isRequired` is truthy, returns true only if parent has such property.
+
+```javascript
 const aRequired = v({
   a: v.requiredIf(true)
 });
 const aNotRequired = v({
   a: v.requiredIf(false)
 });
-aRequired({ a: 1 }); // => true
-aRequired({}); // => false
-aNotRequired({}); // => true
+aRequired({ a: 1 }) // => true
+aNotRequired({ a: 1 }) // => true
+aNotRequired({}) // => true
+aRequired({ a: 1 }) // => false
+```
 
-// config variant
-const conditionalBValidator = v({
+**`v.requiredIf :: (config: Config) => (value: any, ...parents: Parent) => boolean`**
+if `v(config)(value, ...parents)` returns true, then this field treated as required.
+
+```javascript
+const hasParentHasB = (_, { parent }) => parent.hasB
+const bObjValidator = v({
   hasB: "boolean",
-  b: v.requiredIf((b, { parent }) => parent.hasB) // if hasB is true, then we
-});
-conditionalBValidator({ hasB: false }); // => true
-conditionalBValidator({ hasB: true }); // => false
-conditionalBValidator({ hasB: true, b: "present" }); // => true
+  b: v.requiredIf(getParentHasB) // if hasB is true, then b must be required
+})
+bObjValidator({ hasB: true, b: 1 }) // => true
+bObjValidator({ hasB: false }) // => true
+bObjValidator({ hasB: true }) // => false
 ```
 
-`v.min(minValue)` returns validator for:
-
-- number must be greater or equal to minValue
-- array must have at least minValue elements
-- string must have at least minValue characters
-- set must have at least minValue elements
-- map must have at least minValue key-value pairs
-
-`v.max(maxValue)` returns validator for:
-
-- number must be less or equal to maxValue
-- array must have not more then maxValue elements
-- string must have not more then maxValue characters
-- set must have not more then maxValue elements
-- map must have not more then maxValue key-value pairs
-
-`v.not(config: string|function|object)`:
-
-- if v(config) returns truthy value, then v.not(config) return false
-- if v(config) returns falsy value, then v.not(config) reutrn true
-
-`v.regex(regex: RegExp)` returns validator that takes a string, and returns true if regex.test(string) returns true
-
-You can created `quartet` instance with your own registered validators using
+**`v.arrayOf(config: Config) => (arr: any) => boolean`**
+returns true if `arr` is Array and all elements of `arr` are valid
 
 ```javascript
-  const v2 = v.newContext({
-    name: config1,
-    name2: config2,
-    // ...
-  }
-)
-```
-for example 
-```javascript
-v("number")(2); // true
-const newV = v.newContext({});
-newV("number")(2); // => TypeError: Reference to not registered config: number
+v.arrayOf('number')([1,2,3,3,4,5]) // => true
+v.arrayOf('number')([1,'2',3,'3',4,5]) // => false
+
+v.arrayOf(isPrime)([1,2,3,4,5,6,7]) // => false
+v.arrayOf(isPrime)([2,3,5,7]) // => true
 ```
 
-You can take validator dictionary using `v.registered`:
+
+**`v.dictionaryOf(config: Config) => (dict: object<key, value>) => boolean`**
+returns true if all values stored in `dict` are valid using `config`.
+
 ```javascript
-const newV = v.newContext({ s: value => typeof value === 'string' })
-newV.registered // => { s: value => typeof value === 'string' }
+const isNumberDict = v.dictionaryOf('number')
+isNumberDict({a: 1, b: 2, c: 3}) // => true
+isNumberDict({a: 1, b: 2, c: '3'}) // => false
 ```
+
+**`v.dictionaryOf(config: Config) => (dict: object<key, value>) => boolean`**
+returns true if all keys used in `dict` are valid using `config`
+
+```javascript
+const isAbcDict = v.keys(key => ['a', 'b', 'c'].includes(key))
+isNumberDict({a: 1, b: 2, c: 3}) // => true
+isNumberDict({a: 1, b: 2, c: '3'}) // => true
+isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
+```
+
+
+**```javascript
+v.throwError(config: Config, errorMessage: string|(function(value, ...parents: Parent): string)) =>
+  (value: any, parent:Parent, grandParent: Parent, ...) => any
+```**
+`throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
+
+```javascript
+const userId = 
+v.throwError('number', 'userId must be a number')('123') // => throws new Error
+v.throwError('number', 'userId must be a number')(123) // => 123
+```
+
+**`v.min(minValue: number) => value => boolean`**
+
+If value is array, returns true only if
+
+`value.length >= minValue`
+
+If value is string, returns true only if
+
+`value.length >= minValue`
+
+If value is number, returns true only if
+
+`value >= minValue`
+
+If value instanceof Set, returns true only if
+
+`value.size >= minValue`
+
+If value instanceof Map, returns true only if
+
+`value.size >= minValue`
+
+**`v.max(maxValue: number) => value => boolean`**
+
+If value is array, returns true only if
+
+`value.length <= maxValue`
+
+If value is string, returns true only if
+
+`value.length <= maxValue`
+
+If value is number, returns true only if
+
+`value <= maxValue`
+
+If value instanceof Set, returns true only if
+
+`value.size <= maxValue`
+
+If value instanceof Map, returns true only if
+
+`value.size <= maxValue`
+
+```javascript
+v.min(5)(4) // => false
+v.min(5)(5) // => true
+v.min(5)(6) // => true
+
+const isValidYear = v([['number', v.min(1900), v.max(2100)]])
+isValidYear('1875') // => false, because of type string
+isValidYear(1875) // => false
+isValidYear(1996) // => true
+isValidYear(2150) // => false
+
+v.min(5)([1,2,3,4]) // => false
+v.min(5)([1,2,3,4,5]) // => true
+v.min(5)([1,2,3,4,5,6]) // => true
+
+const isValidMiddleSizeArrayOfNumbers = v([[v.arrayOf('number'), v.min(5), v.max(10)]])
+isValidMiddleSizeArrayOfNumbers([1,2,3,4,'5',6]) // => false, because of '5'
+isValidMiddleSizeArrayOfNumbers([1,2,3]) // => false, because of length
+isValidMiddleSizeArrayOfNumbers([1,2,3, 4,5,6,7]) // => true
+
+v.min(5)('1234') // => false
+v.min(5)('12345') // => true
+v.min(5)('12346') // => true
+
+v.max(5)(6) // => false
+v.max(5)(5) // => true
+v.max(5)(4) // => true
+
+v.max(5)([1,2,3,4,5,6]) // => false
+v.max(5)([1,2,3,4,5]) // => true
+v.max(5)([1,2,3,4]) // => true
+
+v.max(5)('123456') // => false
+v.max(5)('12345') // => true
+v.max(5)('1234') // => true
+
+const isValidName = v([['string', v.min(8), v.max(16)]])
+isValidName('andrew') // => false
+isValidName('andrew beletskiy') // => true
+```
+
+**`v.regex(regex: RegExp) => (str: any) => boolean` returns regex.test(str)**
+
+```javascript
+v(/abc/)('abcd') // => true
+v(/abc/)('  abcd') // => true
+v(/^abc/)('  abcd') // => false
+```
+
+**`v.explain(config: Config, getExplanation: any|function) => (obj, ...parents) => boolean`**
+returns true if `obj` isValid (using value and parents passed into validation described by `config`)
+returns false, and push
+```javascript
+getExplanation(value, parent: Parent, grandParent: Parent, ...)
+```
+to `v.explanation`. If getExplanation is not a fucntion it will be pushed as explanation into `v.explanation`
+
 
 **Default registered validators**
 
