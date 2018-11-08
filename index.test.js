@@ -124,8 +124,8 @@ testValidator({
 });
 
 testValidator({
-  caption: "safeInteger default validator",
-  isValid: v("safeInteger"),
+  caption: "safe-integer default validator",
+  isValid: v("safe-integer"),
   trueValues: [1, -1],
   falseValues: [
     1.2,
@@ -140,7 +140,8 @@ testValidator({
     [],
     [undefined],
     [null]
-  ]
+  ],
+  validatorName: 'v("safe-integer")'
 });
 
 testValidator({

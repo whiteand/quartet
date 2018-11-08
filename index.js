@@ -121,7 +121,7 @@ const getDefaultConfigs = func => ({
   undefined: x => x === undefined,
   nil: x => x === null || x === undefined,
   number: x => typeof x === "number",
-  safeInteger: x => Number.isSafeInteger(x),
+  "safe-integer": x => Number.isSafeInteger(x),
   finite: x => Number.isFinite(x),
   positive: x => x > 0,
   negative: x => x < 0,
