@@ -160,24 +160,16 @@ var newContext = registered => {
   resetExplanation();
   const methods = {
     registered: registered || getDefaultConfigs(func),
-    register(name, config) {
-      if (isnt(name)("string")) {
-        throw new TypeError("Name must be a string");
+    register(additionalRegistered) {
+      if (isnt(additionalRegistered)("object")) {
+        throw new TypeError("additionalRegistered must be an object");
       }
-      checkRecursivity(config);
-      validateConfig(config);
-      if (func.registered[name]) {
-        throw new TypeError("This name is already used for validator");
+      for (const config of Object.values(additionalRegistered)) {
+        checkRecursivity(config);
+        validateConfig(config);
       }
-      func.registered[name] = config;
-    },
-    override(name, config) {
-      if (typeof name !== "string") {
-        throw new TypeError("Name must be a string");
-      }
-      checkRecursivity(config);
-      validateConfig(config);
-      func.registered[name] = config;
+
+      return newContext({ ...func.registered, ...additionalRegistered });
     },
     isValidConfig(config) {
       try {
@@ -328,6 +320,7 @@ var newContext = registered => {
     },
     omitInvalidItems(config) {
       const isValid = func(config);
+
       return function(obj) {
         if (isnt(obj)("array", "object")) {
           return obj;
@@ -345,7 +338,17 @@ var newContext = registered => {
           }, {});
       };
     },
-    omitInvalidProps(objConfig) {
+    omitInvalidProps(objConfig, settings = { omitUnchecked: true }) {
+      if (isnt(settings)("object")) {
+        throw new TypeError("settings must be object");
+      }
+      if (isnt(settings.omitUnchecked)("boolean", "undefined")) {
+        throw new TypeError(
+          "settings.omitUnchecked must be boolean, or undefined"
+        );
+      }
+      const { omitUnchecked: omitUnchecked = true } = settings;
+
       while (isnt(objConfig)("object") && is(objConfig)("string")) {
         objConfig = func.registered[objConfig];
       }
@@ -356,14 +359,25 @@ var newContext = registered => {
         if (isnt(obj)("object")) {
           return obj;
         }
-        const newObj = { ...obj };
-        for (const [key, innerConfig] of Object.entries(objConfig)) {
-          const isValidProp = func(innerConfig);
-          if (!isValidProp(obj[key])) {
-            delete newObj[key];
+        if (!omitUnchecked) {
+          const newObj = { ...obj };
+          for (const [key, innerConfig] of Object.entries(objConfig)) {
+            const isValidProp = func(innerConfig);
+            if (!isValidProp(obj[key])) {
+              delete newObj[key];
+            }
           }
+          return newObj;
         }
-        return newObj;
+        return Object.entries(objConfig)
+          .filter(([key, config]) => {
+            const value = obj[key];
+            return func(config)(value);
+          })
+          .reduce((res, [key]) => {
+            res[key] = obj[key];
+            return res;
+          }, {});
       };
     },
     validOr(config, defaultValue) {
@@ -389,4 +403,4 @@ var newContext = registered => {
   return func;
 };
 
-module.exports = newContext();
+module.exports = newContext;

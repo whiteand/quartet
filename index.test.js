@@ -16,7 +16,8 @@ expect.extend({
     return { pass, message };
   }
 });
-const v = require("./index");
+const quartet = require("./index");
+let v = quartet();
 
 const testValidator = ({
   caption,
@@ -476,13 +477,15 @@ describe("explain", () => {
       "wrong property: name. Expected string, but number get",
       "wrong property: age. Expected number, but string get"
     ]);
-    v.override("prime", n => {
-      if (n < 2) return false;
-      if (n === 2) return true;
-      for (let i = 2; i * i <= n; i++) {
-        if (n % i === 0) return false;
+    v = v.register({
+      prime: n => {
+        if (n < 2) return false;
+        if (n === 2) return true;
+        for (let i = 2; i * i <= n; i++) {
+          if (n % i === 0) return false;
+        }
+        return true;
       }
-      return true;
     });
     v();
     const arr = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -558,23 +561,28 @@ describe("omitInvalidProps", () => {
       f: 6,
       g: 7
     };
-    v.override("prime", n => {
-      if (n < 2) return false;
-      if (n === 2) return true;
-      for (let i = 2; i * i <= n; i++) {
-        if (n % i === 0) return false;
+    v = v.register({
+      prime: n => {
+        if (n < 2) return false;
+        if (n === 2) return true;
+        for (let i = 2; i * i <= n; i++) {
+          if (n % i === 0) return false;
+        }
+        return true;
       }
-      return true;
     });
 
-    const onlyPrimesAndF = v.omitInvalidProps({
-      a: "prime",
-      b: "prime",
-      c: "prime",
-      d: "prime",
-      e: "prime",
-      g: "prime"
-    });
+    const onlyPrimesAndF = v.omitInvalidProps(
+      {
+        a: "prime",
+        b: "prime",
+        c: "prime",
+        d: "prime",
+        e: "prime",
+        g: "prime"
+      },
+      { omitUnchecked: false }
+    );
     expect(onlyPrimesAndF(obj)).toEqual({
       b: 2,
       c: 3,
@@ -582,6 +590,15 @@ describe("omitInvalidProps", () => {
       f: 6,
       g: 7
     });
+    const onlyPrimes = v.omitInvalidProps({
+      a: "prime",
+      b: "prime",
+      c: "prime",
+      d: "prime",
+      e: "prime",
+      g: "prime"
+    });
+    expect(onlyPrimes(obj)).toEqual({ b: 2, c: 3, e: 5, g: 7 });
   });
 });
 test("validOr", () => {
