@@ -6,6 +6,92 @@
 
 Library for validations: beautiful and convenient
 
+#  Example
+
+```javascript
+import quartet from 'quartet'
+
+let v = quartet() // creating validator generator
+
+const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
+
+const schema = {
+  username: [['string', v.min(3), v.max(30)]], // string with length from 3 to 30
+  password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], // string with special pattern
+  access_token: ['string', 'number'], // string or number
+  birthyear: [['safe-integer', v.min(1900), v.max(2013)]], // integer number from 1900 to 2013
+  email: [['string', v.regex(emailRegex)]] // email
+}
+
+const isValidObj = v(schema)
+
+// Valid example
+isValidObj({
+  username: 'andrew'
+  password: '123456qQ'
+  access_token: '321654897'
+  birthyear: 1996
+  email: 'test@mail.com'
+}) // => true
+
+// Not valid example
+isValidObj({
+  username: 'an' // wrong
+  password: '123456qQ'
+  access_token: '321654897'
+  birthyear: 1996
+  email: 'test@mail.com'
+}) // => false
+```
+
+If we need explanation, then we must use explanation schema.
+
+```javascript
+const EXPLANATION = {
+  NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
+  USER_NAME: 'username', // as an explanation we will use 
+  PASSWORD: 'password', 
+  ACCESS_TOKEN: 'access_token',
+  BIRTH_YEAR: 'birth_year',
+  EMAIL: email => ({ code: 'email', oldValue: email }) // explanation can get actual value
+}
+// v.explain takes schema and explanation
+const explanationSchema = v.explain({
+  username: v.explain(schema.username, EXPLANATION.USER_NAME),  
+  password: v.explain(schema.password, EXPLANATION.PASSWORD), 
+  access_token: v.explain(schema.access_token, EXPLANATION.ACCESS_TOKEN), 
+  birthyear: v.explain(schema.birthyear, EXPLANATION.BIRTH_YEAR), 
+  email: v.explain(schema.email, EXPLANATION.EMAIL)
+}, EXPLANATION.NOT_A_VALID_OBJECT)
+```
+**explain** returns new schema that changes v.explanation
+```javascript
+const isValidWithExplanation = v(explanationSchema)
+v.resetExplanation() // or just v()
+const isValid = isValidWithExplanation({
+  username: 'an', // wrong
+  password: '123456qQ',
+  access_token: null, // wrong
+  birthyear: 1996,
+  email: '213' // wrong
+}) // => true
+
+// all explanations will be saved into v.explanation
+const errors = v.explanation // errors = ['username', 'access_token', { code: 'email', value: '213'}]
+
+const defaultValues = {
+  username: 'unknown',
+  password: 'qwerty123456',
+  access_token: 0, // wrong
+  birthyear: 2000,
+  email: 'test@mail.com'
+}
+
+const validProps = v.omitInvalidProps(schema)(obj)
+const withDefaultValues = { ...defaultValues, ...validProps }
+
+```
+
 # Install
 
 ```
@@ -516,7 +602,7 @@ There are such registered validators by default:
 |  'undefined'   |             `x => x === undefined`             |
 |     'nil'      |      `x => x === null || x === undefined`      |
 |    'number'    |          `x => typeof x === 'number'`          |
-| 'safeInteger'  |         `x => Number.isSafeInteger(x)`         |
+| 'safe-integer' |         `x => Number.isSafeInteger(x)`         |
 |    'finite'    |           `x => Number.isFinite(x)`            |
 |   'positive'   |                  `x => x > 0`                  |
 |   'negative'   |                  `x => x < 0`                  |
