@@ -17,7 +17,8 @@ npm install quartet
 **Let's install and import quartet (it will be used in all examples below)**
 
 ```javascript
-const v = require("quartet");
+const quartet = require("quartet");
+let v = quartet() // create instance of validator generator
 ```
 
 **Types of validations**
@@ -142,13 +143,15 @@ As you can see there are a lot of simple small validators like `isNumber` or `is
 Let's use `quartet` for it:
 
 ```javascript
-v.register("number", x => typeof x === "number");
-v.register("array", x => Array.isArray(x));
-v.register("string", x => typeof x === "string");
-v.register("object", x => typeof x === "object");
-v.register("undefined", x => x === undefined);
-v.register("null", x => x === null),
-  v.register("required", (_, { key, parent }) => parent.hasOwnProperty(key));
+v = v.register({ // Returns new validator generator with such aliases
+  number: x => typeof x === "number",
+  array: x => Array.isArray(x),
+  string: x => typeof x === "string",
+  object: x => typeof x === "object",
+  "undefined": x => x === undefined,
+  "null": x => x === null,
+  required: (_, { key, parent }) => parent.hasOwnProperty(key)
+})
 
 const isObjectValidConfig = {
   theNumber: "number",
@@ -211,13 +214,15 @@ const obj = {
   }
 };
 
-v.register("number", x => typeof x === "number");
-v.register("array", x => Array.isArray(x));
-v.register("string", x => typeof x === "string");
-v.register("object", x => typeof x === "object");
-v.register("undefined", x => x === undefined);
-v.register("null", x => x === null);
-v.register("required", (_, { key, parent }) => parent.hasOwnProperty(key));
+v = v.register({ // Returns new validator generator with such aliases
+  number: x => typeof x === "number",
+  array: x => Array.isArray(x),
+  string: x => typeof x === "string",
+  object: x => typeof x === "object",
+  "undefined": x => x === undefined,
+  "null": x => x === null,
+  required: (_, { key, parent }) => parent.hasOwnProperty(key)
+})
 
 const isObjectValidConfig = {
   theNumberOrString: ["number", "string"],
@@ -245,11 +250,8 @@ type FromValidable<T> = function(value: any, parent: Parent, grandParent: Parent
 **`v.registered :: Object<configName, config: Config>`**
 returns object with registered configs
 
-**`v.register :: (name: string, config: Config) => void`**
-make `name` alias for `config`. Throws error if alias is already used.
-
-**`v.override :: (name: string, config: Config) => void`**
-make `name` alias for `config`.
+**`v.register :: (AdditionalConfigs: object<string, Config>) => quartet instance`**
+returns new quartet instance with added aliases for validators.
 
 **`v.required :: (...requiredProps: string) => (obj: object) => boolean`**
 returns true if `obj` has all `requiredProps`.
@@ -290,7 +292,7 @@ bObjValidator({ hasB: false }) // => true
 bObjValidator({ hasB: true }) // => false
 ```
 
-**`v.arrayOf(config: Config) => (arr: any) => boolean`**
+**`v.arrayOf :: (config: Config) => (arr: any) => boolean`**
 returns true if `arr` is Array and all elements of `arr` are valid
 
 ```javascript
@@ -302,7 +304,7 @@ v.arrayOf(isPrime)([2,3,5,7]) // => true
 ```
 
 
-**`v.dictionaryOf(config: Config) => (dict: object<key, value>) => boolean`**
+**`v.dictionaryOf :: (config: Config) => (dict: object<key, value>) => boolean`**
 returns true if all values stored in `dict` are valid using `config`.
 
 ```javascript
@@ -311,7 +313,7 @@ isNumberDict({a: 1, b: 2, c: 3}) // => true
 isNumberDict({a: 1, b: 2, c: '3'}) // => false
 ```
 
-**`v.dictionaryOf(config: Config) => (dict: object<key, value>) => boolean`**
+**`v.dictionaryOf :: (config: Config) => (dict: object<key, value>) => boolean`**
 returns true if all keys used in `dict` are valid using `config`
 
 ```javascript
@@ -323,7 +325,7 @@ isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 
 
 **`
-v.throwError(config: Config, errorMessage: string|FromValidable<string>) => FromValidable<any>
+v.throwError :: (config: Config, errorMessage: string|FromValidable<string>) => FromValidable<any>
 `**
 `throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
 
@@ -333,7 +335,7 @@ v.throwError('number', 'userId must be a number')('123') // => throws new Error
 v.throwError('number', 'userId must be a number')(123) // => 123
 ```
 
-**`v.min(minValue: number) => value => boolean`**
+**`v.min :: (minValue: number) => value => boolean`**
 
 If value is array, returns true only if
 
@@ -355,7 +357,7 @@ If value instanceof Map, returns true only if
 
 `value.size >= minValue`
 
-**`v.max(maxValue: number) => value => boolean`**
+**`v.max :: (maxValue: number) => value => boolean`**
 
 If value is array, returns true only if
 
@@ -418,7 +420,7 @@ isValidName('andrew') // => false
 isValidName('andrew beletskiy') // => true
 ```
 
-**`v.regex(regex: RegExp) => (str: any) => boolean` returns regex.test(str)**
+**`v.regex :: (regex: RegExp) => (str: any) => boolean` returns regex.test(str)**
 
 ```javascript
 v(/abc/)('abcd') // => true
@@ -426,7 +428,7 @@ v(/abc/)('  abcd') // => true
 v(/^abc/)('  abcd') // => false
 ```
 
-**`v.explain(config: Config, getExplanation: any|function) => Validator`**
+**`v.explain :: (config: Config, getExplanation: any|function) => Validator`**
 Validator returns true if `obj` isValid (using value and parents passed into validation described by `config`).
 Validator returns false, and push `getExplanation(value, parent: Parent, grandParent: Parent, ...)`
 to `v.explanation`. If getExplanation is not a fucntion it will be pushed as explanation into `v.explanation`
@@ -444,9 +446,9 @@ v.resetExplanation()
 v.explanation // => []
 ```
 
-**`not(config: Config) => Validator`** Returns opposite validator.
+**`not :: (config: Config) => Validator`** Returns opposite validator.
 
-**`omitInvalidItems(config) => (collection: Array|object<key, value>) => Array|object<key, value>`**
+**`omitInvalidItems :: (config) => (collection: Array|object<key, value>) => Array|object<key, value>`**
 
 If `collection` is array, the returs new array without invalid values.
 
@@ -466,9 +468,42 @@ const invalidNumberDict = {
 const onlyNumberProperties = v.omitInvalidItems("number")(
   invalidNumberDict
 );
-
 onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
 ```
+
+**`v.omitInvalidProps :: (objConfig: object|string, { omitUnchecked: boolean = true }) => object => object`**
+Removes invalid properties. If keepUnchecked is falsy value, function will keep unchecked properties of object.
+
+```javascript
+const removeInvalidProps = v.omitInvalidProps({
+  num: 'number',
+  str: 'string',
+  arrNum: v.arrayOf('number')
+})
+removeInvalidProps({
+  num: 123,
+  str: 123,
+  arrNum: [123],
+  unchecked: 32
+}) // => { num: 123, arrNum: [123]}
+const removeInvalidKeepUnchecked = v.omitInvalidProps({
+  num: 'number',
+  str: 'string',
+  arrNum: v.arrayOf('number')
+}, { omitUnchecked: false })
+removeInvalidProps({
+  num: 123,
+  str: 123,
+  arrNum: [123],
+  unchecked: 32
+}) // => { num: 123, arrNum: [123], unchecked: 32 }
+```
+
+**`v.validOr(config: Config, defaultValue: any) => value => value`**
+Returns `value` if it's valid. Returns `defaultValue` otherwise.
+
+**`v.newContext(registered: object<name, Config>)`**
+Returns new instance of validator generator with custom aliases
 
 **Default registered validators**
 
