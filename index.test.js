@@ -142,7 +142,7 @@ describe("combinators", () => {
     expect(v([[]])("value")).toBe(true);
   });
 });
-
+describe("validate config", () => {});
 // DEFAULT VALIDATORS
 testValidator({
   caption: "string default validator",
@@ -303,6 +303,52 @@ testValidator({
   isValid: v("object"),
   trueValues: [null, {}, { a: 1 }, [], new String("123")],
   falseValues: [1, "1", false, true, undefined, Symbol("symbol")]
+});
+testValidator({
+  caption: "object! default validator",
+  isValid: v("object!"),
+  trueValues: [{}, { a: 1 }, [], new String("123")],
+  falseValues: [null, 1, "1", false, true, undefined, Symbol("symbol")],
+  validatorName: `v("object!")`
+});
+
+testValidator({
+  caption: "isValidConfig method",
+  isValid: v.isValidConfig,
+  trueValues: [{}, "a", [["string"]], () => true],
+  falseValues: [
+    null,
+    1,
+    undefined,
+    true,
+    false,
+    (() => {
+      const obj = { a: "number" };
+      obj.self = obj;
+      return obj;
+    })()
+  ],
+  validatorName: `v.isValidConfig`
+});
+
+describe("validateConfig", () => {
+  test("recursive", () => {
+    const recursiveObj = { a: "number" };
+    recursiveObj.b = { c: { d: recursiveObj } };
+    expect(() => {
+      v.validateConfig(recursiveObj);
+    }).toThrowError(new TypeError("Config must be not recursive"));
+  });
+  test("not valid type", () => {
+    const config = null;
+    expect(() => {
+      v.validateConfig(config);
+    }).toThrowError(
+      new TypeError(
+        "config must be either name of registered config, isValid function or object config"
+      )
+    );
+  });
 });
 
 testValidator({
@@ -720,4 +766,12 @@ testValidator({
   trueValues: [1, 2, 3, 4, "5"],
   falseValues: [5, 6],
   validatorName: "v.enum(1, 2, 3, 4, '5')"
+});
+
+testValidator({
+  caption: "v.arrayOf method",
+  isValid: v.arrayOf("number"),
+  trueValues: [[], [1, 2, 3, 4, 5]],
+  falseValues: [null, undefined, false, true, 1, 0, Symbol(123)],
+  validatorName: `v.arrayOf("number")`
 });

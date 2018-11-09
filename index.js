@@ -52,7 +52,7 @@ const variantCheck = (variantsConfigs, registered) => (obj, ...parents) => {
 function validateConfig(config) {
   if (isnt(config)("string", "function", "object", "array")) {
     throw new TypeError(
-      "config must be either name of registered config, isValid function or object config: "
+      "config must be either name of registered config, isValid function or object config"
     );
   }
 
@@ -381,11 +381,7 @@ var newContext = registered => {
       };
     },
     validOr(config, defaultValue) {
-      if (isnt(config)("string", "object", "array", "function")) {
-        throw new TypeError(
-          "config must be a valid quartet config (string, object, array, function)"
-        );
-      }
+      validateConfig(config);
       return function(obj) {
         const isValid = func(config);
         if (!isValid(obj)) {
