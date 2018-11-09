@@ -394,6 +394,12 @@ var newContext = registered => {
         return obj;
       };
     },
+    enum(...primitive) {
+      const elementSet = new Set(primitive);
+      return function(value) {
+        return elementSet.has(value);
+      };
+    },
     newContext,
     resetExplanation
   };

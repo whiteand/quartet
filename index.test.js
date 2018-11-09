@@ -602,7 +602,15 @@ describe("omitInvalidProps", () => {
     expect(onlyPrimes(obj)).toEqual({ b: 2, c: 3, e: 5, g: 7 });
   });
 });
-test("validOr", () => {
+test("validOr method", () => {
   expect(v.validOr("number", 0)(123)).toBe(123);
   expect(v.validOr("number", 0)("123")).toBe(0);
+});
+
+testValidator({
+  caption: "enum method",
+  isValid: v.enum(1, 2, 3, 4, "5"),
+  trueValues: [1, 2, 3, 4, "5"],
+  falseValues: [5, 6],
+  validatorName: "v.enum(1, 2, 3, 4, '5')"
 });
