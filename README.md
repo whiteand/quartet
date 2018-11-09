@@ -6,6 +6,17 @@
 
 Library for validations: beautiful and convenient
 
+## Contents
+
+- [Example](#example)
+- [Install](#install)
+- [The Way of validation](#the-way-of-validation)
+  - [Types of validations](#types-of-validations)
+  - [Validation predicates](#validation-predicates)
+  - [Object validation](#object-validation)
+  - [Registered validations](#registered-validations)
+- [Default registered validators](#default-registered-validators)
+- [Methods](#methods)
 #  Example
 
 ```javascript
@@ -117,7 +128,7 @@ const quartet = require("quartet");
 let v = quartet() // create instance of validator generator
 ```
 
-### Types of validations
+## Types of validations
 
 There are four types of validations:
 
@@ -127,7 +138,7 @@ There are four types of validations:
 - Combinated validation (all previous types in different combinations
   using `and` and/or `or` logic operations)
 
-### Validation predicates
+## Validation predicates
 
 It's maybe the simplest type of validations. So go to examples:
 If we want to validate even number we can just write:
@@ -149,7 +160,7 @@ const isTwoEven = v(x => x % 2 === 0)(2);
 As you see `quartet` can take predicate function as a parameter. The first argument of the function is the value to be validate. (There are other arguments, but this is a different story)
 It seems to be not necessary to use `quartet` for such examples. So we should go deeper to see full beauty of validation!
 
-### Object validation
+## Object validation
 
 There is something in objects - they are complex, they consists of many different parts. All parts should be validated separately and sometimes all together.
 
@@ -233,7 +244,7 @@ Also as you can see: inner values of config - are not only simple predicates. Bu
 
 (You can see that code is still not so beautiful as we want. What do we want? Go deeper to see it!)
 
-### Registered validations
+## Registered validations
 
 As you can see there are a lot of simple small validators like `isNumber` or `isArray`. It will be better to write them once and use everywhere, won't it?
 Let's use `quartet` for it:
@@ -264,7 +275,7 @@ const isValid = v(isObjectValidConfig)(obj);
 
 This is interesting and useful solution, but this is much complicted that it was before, but we can do better! Go deeper!
 
-### Combinated validations
+## Combinated validations
 
 This complexity is bad. It's scary thing that people hate.
 
@@ -364,7 +375,7 @@ So you can see that we shouldn't register own validators - if they are present b
 
 # Methods
 
-### Types
+## Types
 ```javascript
 type Config = function|string|object|Array`
 type Parent = { key: string|number, parent: object|array }
@@ -386,17 +397,17 @@ type FromValidable<T> = function(
 
 ---
 
-**`v.registered :: Object<configName, config: Config>`**
+### `v.registered` :: Object<configName, config: Config>`
 returns object with registered configs
 
 ---
 
-**`v.register :: (AdditionalConfigs: object<string, Config>) => quartet instance`**
+### `v.register :: (AdditionalConfigs: object<string, Config>) => quartet instance`
 returns new quartet instance with added aliases for validators.
 
 ---
 
-**`v.required :: (...requiredProps: string) => (obj: object) => boolean`**
+### `v.required :: (...requiredProps: string) => (obj: object) => boolean`
 returns true if `obj` has all `requiredProps`.
 
 ```javascript
@@ -406,7 +417,7 @@ returns true if `obj` has all `requiredProps`.
 
 ---
 
-**`v.requiredIf :: (isRequired: boolean) => Validator`**
+### `v.requiredIf :: (isRequired: boolean) => Validator`
 
 if `isRequired` is truthy, validator returns true only if parent has such property.
 
@@ -425,7 +436,7 @@ aRequired({ a: 1 }) // => false
 
 ---
 
-**`v.requiredIf :: (config: Config) => Validator(value, ...parents)`**
+### `v.requiredIf :: (config: Config) => Validator(value, ...parents)`
 if `v(config)(value, ...parents)` returns true, then this field treated as required.
 
 ```javascript
@@ -441,7 +452,7 @@ bObjValidator({ hasB: true }) // => false
 
 ---
 
-**`v.arrayOf :: (config: Config) => (arr: any) => boolean`**
+### `v.arrayOf :: (config: Config) => (arr: any) => boolean`
 returns true if `arr` is Array and all elements of `arr` are valid
 
 ```javascript
@@ -454,7 +465,7 @@ v.arrayOf(isPrime)([2,3,5,7]) // => true
 
 ---
 
-**`v.dictionaryOf :: (config: Config) => (dict: object<key, value>) => boolean`**
+### v.dictionaryOf :: (config: Config) => (dict: object<key, value>) => boolean`
 returns true if all values stored in `dict` are valid using `config`.
 
 ```javascript
@@ -463,7 +474,7 @@ isNumberDict({a: 1, b: 2, c: 3}) // => true
 isNumberDict({a: 1, b: 2, c: '3'}) // => false
 ```
 ---
-**`v.keys :: (config: Config) => (dict: object<key, value>) => boolean`**
+### v.keys :: (config: Config) => (dict: object<key, value>) => boolean`
 returns true if all keys used in `dict` are valid using `config`
 
 ```javascript
@@ -475,9 +486,7 @@ isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 
 ---
 
-**`
-v.throwError :: (config: Config, errorMessage: string|FromValidable<string>) => FromValidable<any>
-`**
+### `v.throwError :: (config: Config, errorMessage: string|FromValidable<string>) => FromValidable<any>`
 `throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
 
 ```javascript
@@ -488,7 +497,7 @@ v.throwError('number', 'userId must be a number')(123) // => 123
 
 ---
 
-**`v.min :: (minValue: number) => value => boolean`**
+### `v.min :: (minValue: number) => value => boolean`
 
 If value is array, returns true only if
 
@@ -510,7 +519,7 @@ If value instanceof Map, returns true only if
 
 `value.size >= minValue`
 
-**`v.max :: (maxValue: number) => value => boolean`**
+### `v.max :: (maxValue: number) => value => boolean`
 
 If value is array, returns true only if
 
@@ -575,7 +584,8 @@ isValidName('andrew beletskiy') // => true
 
 ---
 
-**`v.regex :: (regex: RegExp) => (str: any) => boolean` returns regex.test(str)**
+### `v.regex :: (regex: RegExp) => (str: any) => boolean`
+returns regex.test(str)
 
 ```javascript
 v(/abc/)('abcd') // => true
@@ -585,7 +595,7 @@ v(/^abc/)('  abcd') // => false
 
 ---
 
-**`v.explain :: (config: Config, explanation: any|function) => Validator`**
+### `v.explain :: (config: Config, explanation: any|function) => Validator`
 Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array.
 
 ```javascript
@@ -603,12 +613,13 @@ v.explanation // => []
 
 ---
 
-**`not :: (config: Config) => Validator`** Returns opposite validator.
+### not :: (config: Config) => Validator`
+Returns opposite validator.
 
 ---
 
 
-**`omitInvalidItems :: (config) => (collection: Array|object<key, value>) => Array|object<key, value>`**
+### `omitInvalidItems :: (config) => (collection: Array|object<key, value>) => Array|object<key, value>`
 
 If `collection` is array, the returs new array without invalid values.
 
@@ -634,7 +645,7 @@ onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
 ---
 
 
-**`v.omitInvalidProps :: (objConfig: object|string, { omitUnchecked: boolean = true }) => object => object`**
+### `v.omitInvalidProps :: (objConfig: object|string, { omitUnchecked: boolean = true }) => object => object`
 Removes invalid properties. If keepUnchecked is falsy value, function will keep unchecked properties of object.
 
 ```javascript
@@ -664,15 +675,15 @@ removeInvalidProps({
 
 ---
 
-**`v.validOr :: (config: Config, defaultValue: any) => value => value`**
+### `v.validOr :: (config: Config, defaultValue: any) => value => value`
 Returns `value` if it's valid. Returns `defaultValue` otherwise.
 
 ---
 
-**`v.newContext :: (registered: object<name, Config>) => quartet instance`**
+### `v.newContext :: (registered: object<name, Config>) => quartet instance`
 Returns new instance of validator generator with custom aliases
 
 ---
 
-**`v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`**
+### `v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`
 Returns validator, that returns true only of value isone of primitiveValues.
