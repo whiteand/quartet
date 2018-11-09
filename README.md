@@ -585,7 +585,7 @@ v(/^abc/)('  abcd') // => false
 
 ---
 
-**`v.explain :: (config: Config, getExplanation: any|function) => Validator`**
+**`v.explain :: (config: Config, explanation: any|function) => Validator`**
 Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array.
 
 ```javascript
