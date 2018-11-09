@@ -353,7 +353,7 @@ There are such registered validators by default:
 |    'object'    |          `x => typeof x === 'object'`          |
 |   'object!'    |   `x => typeof x === 'object' && x !== null`   |
 |    'array'     |            `x => Array.isArray(x)`             |
-|  'not-empty'   | return `true` if value if not empty (see code) |
+|  'not-empty'   | return `true` if value is not empty (see code) |
 |    'symbol'    |          `x => typeof x === 'symbol'`          |
 |   'function'   |         `x => typeof x === 'function'`         |
 |     'log'      |   returns `true` and logs value and parents    |
