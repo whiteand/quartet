@@ -503,6 +503,11 @@ describe("min method", () => {
     falseValues: [new Map(), new Map([[1, 1]])],
     validatorName: "v.min(5)"
   });
+  test("min wrong param", () => {
+    expect(() => v.min("1")).toThrowError(
+      new TypeError("minValue must be a number")
+    );
+  });
 });
 
 describe("max method", () => {
@@ -774,4 +779,74 @@ testValidator({
   trueValues: [[], [1, 2, 3, 4, 5]],
   falseValues: [null, undefined, false, true, 1, 0, Symbol(123)],
   validatorName: `v.arrayOf("number")`
+});
+
+testValidator({
+  caption: "required method",
+  isValid: v.required("a", "b", "c"),
+  trueValues: [{ a: 1, b: 2, c: undefined }, { a: 1, b: 2, c: 3, d: 4 }],
+  falseValues: [{ a: 1, b: 2 }, { a: 1, c: 3, d: 4 }, { c: 3, d: 4 }],
+  validatorName: `v.required("a", "b", "c")`
+});
+
+describe("register method", () => {
+  test("valid path", () => {
+    let v2 = v.register({
+      a: "number"
+    });
+    expect(v2("a")(1)).toBe(true);
+    expect(v2("a")("1")).toBe(false);
+  });
+  test("invalid path", () => {
+    expect(() => {
+      let v2 = v.register();
+    }).toThrowError(new TypeError("additionalRegistered must be an object"));
+  });
+});
+
+testValidator({
+  caption: "dictionaryOf method",
+  isValid: v.dictionaryOf("number"),
+  trueValues: [{}, { a: 1 }, { a: 2, c: NaN, d: 1 / 0, e: -1 / 0 }],
+  falseValues: [{ a: "1" }, { b: null, a: 1 }],
+  validatorName: `v.dictionaryOf('number')`
+});
+
+testValidator({
+  caption: "dictionaryOf method",
+  isValid: v.keys(v.enum("a", "b", "c")),
+  trueValues: [{ a: 1 }, {}, { a: 2, c: NaN }],
+  falseValues: [{ a: "1", d: "e" }, { "": null, a: 1 }],
+  validatorName: `v.keys(s => "abc".includes(s))`
+});
+
+describe("throwError", () => {
+  test("valid", () => {
+    const validNumber = 1;
+    expect(v.throwError("number", "not valid number")(validNumber)).toBe(
+      validNumber
+    );
+  });
+  test("invalid message is string", () => {
+    const validNumber = "1";
+    expect(() =>
+      v.throwError("number", "not valid number")(validNumber)
+    ).toThrowError(new TypeError("not valid number"));
+  });
+  test("invalid message is function", () => {
+    const validNumber = "1";
+    expect(() =>
+      v.throwError("number", value => `${value} is not valid number`)(
+        validNumber
+      )
+    ).toThrowError(new TypeError("1 is not valid number"));
+  });
+  test("invalid message is function that returns not string", () => {
+    const validNumber = "1";
+    expect(() => v.throwError("number", value => 1)(validNumber)).toThrowError(
+      new TypeError(
+        "errorMessage must be a string, or function that returns string"
+      )
+    );
+  });
 });
