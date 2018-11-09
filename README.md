@@ -155,7 +155,7 @@ There is something in objects - they are complex, they consists of many differen
 
 **Let's write some examples:**
 
-**Simple**
+**Straight way of validation**
 
 ```javascript
 const obj = {
