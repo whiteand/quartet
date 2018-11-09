@@ -58,15 +58,8 @@ function validateConfig(config) {
 
   return true;
 }
-function validateRegistered(registered) {
-  if (isnt(registered)("object")) {
-    throw new TypeError(
-      "registered must be an object { key1: config1, key2: config2, ...}"
-    );
-  }
-}
 
-function where(config, registered = {}) {
+function where(config, registered) {
   validateConfig(config);
   switch (getType(config)) {
     case "string":

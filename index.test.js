@@ -741,11 +741,18 @@ describe("omitInvalidProps", () => {
     expect(() => v.omitInvalidProps("wrong", null)).toThrowError(
       new TypeError("settings must be object")
     );
+    expect(v.omitInvalidProps({ a: "number" })(null)).toBe(null);
+    expect(v.omitInvalidProps({ a: "number" })(1)).toBe(1);
+    expect(v.omitInvalidProps({ a: "number" })([1])).toEqual([1]);
+    expect(v.omitInvalidProps({ a: "number" })("123")).toBe("123");
     expect(() =>
       v.omitInvalidProps("wrong", { omitUnchecked: 1 })
     ).toThrowError(
       new TypeError("settings.omitUnchecked must be boolean, or undefined")
     );
+    expect(
+      v.omitInvalidProps({ a: "number" }, { omitUnchecked2: 1 })({ a: 1, b: 1 })
+    ).toEqual({ a: 1 });
   });
   test("omitInvalidProps", () => {
     const obj = {
@@ -876,10 +883,16 @@ describe("throwError", () => {
       validNumber
     );
   });
+  test("default error message", () => {
+    const invalidNumber = "1";
+    expect(() => v.throwError("number")(invalidNumber)).toThrowError(
+      new TypeError("Validation error")
+    );
+  });
   test("invalid message is string", () => {
-    const validNumber = "1";
+    const invalidNumber = "1";
     expect(() =>
-      v.throwError("number", "not valid number")(validNumber)
+      v.throwError("number", "not valid number")(invalidNumber)
     ).toThrowError(new TypeError("not valid number"));
   });
   test("invalid message is function", () => {
@@ -893,6 +906,14 @@ describe("throwError", () => {
   test("invalid message is function that returns not string", () => {
     const validNumber = "1";
     expect(() => v.throwError("number", value => 1)(validNumber)).toThrowError(
+      new TypeError(
+        "errorMessage must be a string, or function that returns string"
+      )
+    );
+  });
+  test("invalid message is function that returns not string", () => {
+    const validNumber = "1";
+    expect(() => v.throwError("number", 1)(validNumber)).toThrowError(
       new TypeError(
         "errorMessage must be a string, or function that returns string"
       )
