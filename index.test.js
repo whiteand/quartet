@@ -36,6 +36,113 @@ const testValidator = ({
   });
 };
 
+describe("stringCheck function", () => {
+  test("right name of config", () => {
+    expect(v("number")(1)).toBe(true);
+    expect(v("finite")(1)).toBe(true);
+  });
+  test("wrong name of config", () => {
+    expect(() => v("wrong name of validator")(1)).toThrowError(
+      new TypeError(
+        "Reference to not registered config: wrong name of validator"
+      )
+    );
+  });
+});
+
+describe("functionCheck function", () => {
+  test("function passed", () => {
+    const isEven = jest.fn(n => n % 2 === 0);
+    expect(v(isEven)(4)).toBe(true);
+    expect(isEven).toBeCalledWith(4);
+    expect(isEven).toBeCalledTimes(1);
+    expect(v(isEven)(3)).toBe(false);
+    expect(isEven).toBeCalledWith(3);
+    expect(isEven).toBeCalledTimes(2);
+  });
+});
+
+describe("objectCheck function", () => {
+  test("value is not object branch", () => {
+    expect(v({ a: "number " })(1)).toBe(false);
+    expect(v({ a: "number " })(null)).toBe(false);
+  });
+  test("no into loop of entries", () => {
+    expect(v({})({})).toBe(true);
+    expect(v({})({ a: 2 })).toBe(true);
+  });
+  test("properties valid", () => {
+    expect(v({ a: "number" })({ a: 1 })).toBe(true);
+  });
+  test("properties invalid valid", () => {
+    expect(v({ a: "number" })({ a: "1", b: 1 })).toBe(false);
+    expect(v({ a: "number" })({ b: 1 })).toBe(false);
+  });
+});
+
+describe("combinators", () => {
+  test("or", () => {
+    const retTrue = jest.fn(() => true);
+    const retTrue2 = jest.fn(() => true);
+    const retTrue3 = jest.fn(() => true);
+    const retFalse = jest.fn(() => false);
+
+    expect(v([retTrue, retTrue2, retTrue3])(1)).toBe(true);
+
+    expect(retTrue).toBeCalledWith(1);
+    expect(retTrue).toBeCalledTimes(1);
+    expect(retTrue2).toBeCalledTimes(0);
+    expect(retTrue3).toBeCalledTimes(0);
+
+    expect(v([retFalse, retTrue2, retTrue3])(1)).toBe(true);
+
+    expect(retFalse).toBeCalledWith(1);
+    expect(retFalse).toBeCalledTimes(1);
+
+    expect(retTrue2).toBeCalledWith(1);
+    expect(retTrue2).toBeCalledTimes(1);
+
+    expect(retTrue3).toBeCalledTimes(0);
+    [retTrue, retTrue2, retTrue3, retFalse].forEach(f => f.mockClear());
+    expect(v([retFalse])(1)).toBe(false);
+    expect(retFalse).toBeCalledTimes(1);
+    expect(retFalse).toBeCalledWith(1);
+    expect(v([])("value")).toBe(false);
+  });
+
+  test("and", () => {
+    const retTrue = jest.fn(() => true);
+    const retTrue2 = jest.fn(() => true);
+    const retTrue3 = jest.fn(() => true);
+    const retFalse = jest.fn(() => false);
+
+    expect(v([[retFalse, retTrue]])("value")).toBe(false);
+
+    expect(retFalse).toBeCalledWith("value");
+    expect(retFalse).toBeCalledTimes(1);
+    [retTrue, retTrue2, retTrue3, retFalse].forEach(f => f.mockClear());
+
+    expect(v([[retTrue, retFalse, retTrue2, retTrue3]])("value")).toBe(false);
+    expect(retTrue).toBeCalledTimes(1);
+    expect(retTrue).toBeCalledWith("value");
+    expect(retFalse).toBeCalledTimes(1);
+    expect(retFalse).toBeCalledWith("value");
+    expect(retTrue2).toBeCalledTimes(0);
+    [retTrue, retTrue2, retTrue3, retFalse].forEach(f => f.mockClear());
+
+    expect(v([[retTrue, retTrue2, retTrue3]])("value")).toBe(true);
+
+    expect(retTrue).toBeCalledTimes(1);
+    expect(retTrue).toBeCalledWith("value");
+    expect(retTrue2).toBeCalledTimes(1);
+    expect(retTrue2).toBeCalledWith("value");
+    expect(retTrue3).toBeCalledTimes(1);
+    expect(retTrue3).toBeCalledWith("value");
+
+    expect(v([[]])("value")).toBe(true);
+  });
+});
+
 // DEFAULT VALIDATORS
 testValidator({
   caption: "string default validator",
