@@ -585,10 +585,8 @@ v(/^abc/)('  abcd') // => false
 
 ---
 
-**`v.explain :: (config: Config, getExplanation: any|function) => Validator`**
-Validator returns true if `obj` isValid (using value and parents passed into validation described by `config`).
-Validator returns false, and push `getExplanation(value, parent: Parent, grandParent: Parent, ...)`
-to `v.explanation`. If getExplanation is not a fucntion it will be pushed as explanation into `v.explanation`
+**`v.explain :: (config: Config, explanation: any|function) => Validator`**
+Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array.
 
 ```javascript
 v.resetExplanation()
