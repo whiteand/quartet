@@ -595,11 +595,14 @@ removeInvalidProps({
 }) // => { num: 123, arrNum: [123], unchecked: 32 }
 ```
 
-**`v.validOr(config: Config, defaultValue: any) => value => value`**
+**`v.validOr :: (config: Config, defaultValue: any) => value => value`**
 Returns `value` if it's valid. Returns `defaultValue` otherwise.
 
-**`v.newContext(registered: object<name, Config>)`**
+**`v.newContext :: (registered: object<name, Config>) => quartet instance`**
 Returns new instance of validator generator with custom aliases
+
+**`v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`**
+Returns validator, that returns true only of value isone of primitiveValues.
 
 **Default registered validators**
 
