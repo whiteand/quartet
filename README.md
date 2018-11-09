@@ -339,7 +339,13 @@ v(isObjectValidConfig)(obj);
 ```javascript
 type Config = function|string|object|Array`
 type Parent = { key: string|number, parent: object|array }
-type Validator = function(value: any, parent: Parent, grandParent: Parent, grandGrandParent: Parent, ...) => boolean
+type Validator = function(
+  value: any,
+  parent: Parent,
+  grandParent: Parent,
+  grandGrandParent: Parent,
+  ...
+) => boolean
 type FromValidable<T> = function(
   value: any,
   parent: Parent,
