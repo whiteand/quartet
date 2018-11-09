@@ -137,7 +137,7 @@ const getDefaultConfigs = func => ({
   }
 });
 
-var newContext = registered => {
+const newContext = registered => {
   function func(config, registered = func.registered) {
     if (config === undefined) {
       return resetExplanation();
@@ -306,6 +306,7 @@ var newContext = registered => {
           : getExplanation;
         func.explanation.push(explanation);
         f.explanation.push(explanation);
+        return false;
       }
       function resetExplanation() {
         f.explanation = [];

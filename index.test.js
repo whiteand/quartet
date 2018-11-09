@@ -579,6 +579,16 @@ describe("regex method", () => {
 });
 
 describe("explain", () => {
+  test("firstly v must have empty explanation", () => {
+    const v2 = v.newContext();
+    expect(typeof v2).toBe("function");
+    const isValidNumber = v2.explain("number", 1);
+    expect(isValidNumber("1")).toBe(false);
+    expect(v2.explanation).toEqual([1]);
+    v2();
+    expect(v2.explanation).toEqual([]);
+    expect(isValidNumber.explanation).toEqual([1]);
+  });
   test("without explanation", () => {
     const isValid = v().explain("number");
     isValid(1);
@@ -685,6 +695,13 @@ describe("Test omitInvalidItems", () => {
       Symbol.for("asd")
     );
 
+    const keepOnlyElementsEqualFirstElement = v.omitInvalidItems(
+      (value, { parent }) => parent[0] === value
+    );
+    expect(
+      keepOnlyElementsEqualFirstElement([1, 2, 3, 4, 5, 6, 1, "1"])
+    ).toEqual([1, 1]);
+
     const onlyNumbers = v.omitInvalidItems("number")(arr);
     expect(onlyNumbers).toEqual([1, 3, 5]);
 
@@ -727,6 +744,10 @@ describe("Test omitInvalidItems", () => {
       an: "ap",
       "1a": "96"
     });
+  });
+  test("omitInvalidItems(object) - all valid", () => {
+    const dict = { a: 1, b: 2, c: 3 };
+    expect(v.omitInvalidItems("number")(dict)).toEqual({ a: 1, b: 2, c: 3 });
   });
 });
 
