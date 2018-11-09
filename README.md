@@ -397,7 +397,7 @@ type FromValidable<T> = function(
 
 ---
 
-### `v.registered` :: Object<configName, config: Config>`
+### `v.registered :: Object<configName, config: Config>`
 returns object with registered configs
 
 ---
