@@ -409,7 +409,7 @@ isNumberDict({a: 1, b: 2, c: 3}) // => true
 isNumberDict({a: 1, b: 2, c: '3'}) // => false
 ```
 
-**`v.dictionaryOf :: (config: Config) => (dict: object<key, value>) => boolean`**
+**`v.keys :: (config: Config) => (dict: object<key, value>) => boolean`**
 returns true if all keys used in `dict` are valid using `config`
 
 ```javascript
