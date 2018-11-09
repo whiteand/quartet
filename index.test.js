@@ -367,7 +367,9 @@ testValidator({
     1,
     new Set([1, 2, 3]),
     new Map([[1, 2]]),
-    new Date()
+    new Date(),
+    {},
+    Symbol("123")
   ],
   falseValues: ["", [], 0, null, undefined, false, new Set([]), new Map()],
   validatorName: "not-empty"
@@ -554,14 +556,26 @@ describe("max method", () => {
     falseValues: [new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6]])],
     validatorName: "v.max(5)"
   });
+  test("wrong input param", () => {
+    expect(() => v.max("1")).toThrowError(
+      new TypeError("maxValue must be a number")
+    );
+  });
 });
 
-testValidator({
-  caption: "regex method",
-  isValid: v.regex(/.abc./),
-  trueValues: [" abc ", "aabcdd", "aabcddddd"],
-  falseValues: ["abc ", "aabdd", "aaddddd"],
-  validatorName: `v.regex(/.abc./)`
+describe("regex method", () => {
+  testValidator({
+    caption: "regex method validator results",
+    isValid: v.regex(/.abc./),
+    trueValues: [" abc ", "aabcdd", "aabcddddd"],
+    falseValues: ["abc ", "aabdd", "aaddddd"],
+    validatorName: `v.regex(/.abc./)`
+  });
+  test("regex not regex input", () => {
+    expect(() => v.regex("/abc/")).toThrowError(
+      new TypeError("regex can takes only RegExp instances")
+    );
+  });
 });
 
 describe("explain", () => {
@@ -664,6 +678,13 @@ describe("Test omitInvalidItems", () => {
   test("omitInvalidItems(array)", () => {
     const arr = [1, "2", 3, "4", 5];
 
+    expect(v.omitInvalidItems("number")(null)).toBe(null);
+    expect(v.omitInvalidItems("number")(1)).toBe(1);
+    expect(v.omitInvalidItems("number")("asd")).toBe("asd");
+    expect(v.omitInvalidItems("number")(Symbol.for("asd"))).toBe(
+      Symbol.for("asd")
+    );
+
     const onlyNumbers = v.omitInvalidItems("number")(arr);
     expect(onlyNumbers).toEqual([1, 3, 5]);
 
@@ -710,6 +731,22 @@ describe("Test omitInvalidItems", () => {
 });
 
 describe("omitInvalidProps", () => {
+  test("omitInvalidProps wrong settings", () => {
+    expect(() => v.omitInvalidProps()).toThrowError(
+      new TypeError("Wrong object config")
+    );
+    expect(() => v.omitInvalidProps("wrong")).toThrowError(
+      new TypeError("Wrong object config")
+    );
+    expect(() => v.omitInvalidProps("wrong", null)).toThrowError(
+      new TypeError("settings must be object")
+    );
+    expect(() =>
+      v.omitInvalidProps("wrong", { omitUnchecked: 1 })
+    ).toThrowError(
+      new TypeError("settings.omitUnchecked must be boolean, or undefined")
+    );
+  });
   test("omitInvalidProps", () => {
     const obj = {
       a: 1,
@@ -804,11 +841,23 @@ describe("register method", () => {
   });
 });
 
+describe("newContext", () => {
+  test("not an object registered", () => {
+    expect(() => {
+      const v2 = v.newContext(1);
+    }).toThrowError(
+      new TypeError(
+        "registered must be an object { key1: config1, key2: config2, ...}"
+      )
+    );
+  });
+});
+
 testValidator({
   caption: "dictionaryOf method",
   isValid: v.dictionaryOf("number"),
   trueValues: [{}, { a: 1 }, { a: 2, c: NaN, d: 1 / 0, e: -1 / 0 }],
-  falseValues: [{ a: "1" }, { b: null, a: 1 }],
+  falseValues: [{ a: "1" }, { b: null, a: 1 }, null, 1, false, undefined, true],
   validatorName: `v.dictionaryOf('number')`
 });
 
@@ -849,4 +898,12 @@ describe("throwError", () => {
       )
     );
   });
+});
+
+testValidator({
+  caption: "not method",
+  isValid: v.not("number"),
+  trueValues: ["1", null, undefined, new Error("123")],
+  falseValues: [1, NaN, 1 / 0, -1 / 0, 1.2, 0],
+  validatorName: `v.not("number")`
 });

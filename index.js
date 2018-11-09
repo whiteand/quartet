@@ -68,7 +68,6 @@ function validateRegistered(registered) {
 
 function where(config, registered = {}) {
   validateConfig(config);
-  validateRegistered(registered);
   switch (getType(config)) {
     case "string":
       return stringCheck(config, registered);
@@ -158,8 +157,14 @@ var newContext = registered => {
     return func;
   }
   resetExplanation();
+  if (isnt(registered)("object", "undefined")) {
+    throw new TypeError(
+      "registered must be an object { key1: config1, key2: config2, ...}"
+    );
+  }
+  registered = registered || getDefaultConfigs(func);
   const methods = {
-    registered: registered || getDefaultConfigs(func),
+    registered,
     register(additionalRegistered) {
       if (isnt(additionalRegistered)("object")) {
         throw new TypeError("additionalRegistered must be an object");
@@ -289,7 +294,7 @@ var newContext = registered => {
     },
     regex(regex) {
       if (!(regex instanceof RegExp)) {
-        throw new TypeError("Regex can takes only RegExp instances");
+        throw new TypeError("regex can takes only RegExp instances");
       }
       return str => regex.test(str);
     },
