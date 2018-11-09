@@ -333,6 +333,35 @@ const isObjectValidConfig = {
 v(isObjectValidConfig)(obj);
 ```
 
+# Default registered validators
+
+There are such registered validators by default:
+
+|      name      |                   condition                    |
+| :------------: | :--------------------------------------------: |
+|    'string'    |            `typeof x === 'string'`             |
+|     'null'     |               `x => x === null`                |
+|  'undefined'   |             `x => x === undefined`             |
+|     'nil'      |      `x => x === null || x === undefined`      |
+|    'number'    |          `x => typeof x === 'number'`          |
+| 'safe-integer' |         `x => Number.isSafeInteger(x)`         |
+|    'finite'    |           `x => Number.isFinite(x)`            |
+|   'positive'   |                  `x => x > 0`                  |
+|   'negative'   |                  `x => x < 0`                  |
+| 'non-negative' |                 `x => x >= 0`                  |
+| 'non-positive' |                 `x => x <= 0`                  |
+|    'object'    |          `x => typeof x === 'object'`          |
+|   'object!'    |   `x => typeof x === 'object' && x !== null`   |
+|    'array'     |            `x => Array.isArray(x)`             |
+|  'not-empty'   | return `true` if value if not empty (see code) |
+|    'symbol'    |          `x => typeof x === 'symbol'`          |
+|   'function'   |         `x => typeof x === 'function'`         |
+|     'log'      |   returns `true` and logs value and parents    |
+|   'required'   |  returns `true` - if parent has the property   |
+
+So you can see that we shouldn't register own validators - if they are present by default. So example above can be rewritten without registering any of validators.
+
+
 # Methods
 
 ### Types
@@ -649,31 +678,3 @@ Returns new instance of validator generator with custom aliases
 
 **`v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`**
 Returns validator, that returns true only of value isone of primitiveValues.
-
-# Default registered validators
-
-There are such registered validators by default:
-
-|      name      |                   condition                    |
-| :------------: | :--------------------------------------------: |
-|    'string'    |            `typeof x === 'string'`             |
-|     'null'     |               `x => x === null`                |
-|  'undefined'   |             `x => x === undefined`             |
-|     'nil'      |      `x => x === null || x === undefined`      |
-|    'number'    |          `x => typeof x === 'number'`          |
-| 'safe-integer' |         `x => Number.isSafeInteger(x)`         |
-|    'finite'    |           `x => Number.isFinite(x)`            |
-|   'positive'   |                  `x => x > 0`                  |
-|   'negative'   |                  `x => x < 0`                  |
-| 'non-negative' |                 `x => x >= 0`                  |
-| 'non-positive' |                 `x => x <= 0`                  |
-|    'object'    |          `x => typeof x === 'object'`          |
-|   'object!'    |   `x => typeof x === 'object' && x !== null`   |
-|    'array'     |            `x => Array.isArray(x)`             |
-|  'not-empty'   | return `true` if value if not empty (see code) |
-|    'symbol'    |          `x => typeof x === 'symbol'`          |
-|   'function'   |         `x => typeof x === 'function'`         |
-|     'log'      |   returns `true` and logs value and parents    |
-|   'required'   |  returns `true` - if parent has the property   |
-
-So you can see that we shouldn't register own validators - if they are present by default. So example above can be rewritten without registering any of validators.
