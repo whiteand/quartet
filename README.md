@@ -108,7 +108,7 @@ const withDefaultValues = { ...defaultValues, ...validProps }
 npm install quartet
 ```
 
-# Docs
+# Zen of validation
 
 **Let's install and import quartet (it will be used in all examples below)**
 
