@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 const getType = x => {
   if (Array.isArray(x)) {
     return 'array'
@@ -42,7 +44,7 @@ const objectCheck = (configObj, registered) => (obj, ...parents) => {
     const value = obj[key]
     const isValidProperty = where(innerConfig, registered)(
       value,
-      {key, parent: obj},
+      { key, parent: obj },
       ...parents
     )
     if (!isValidProperty) {
@@ -63,7 +65,7 @@ const variantCheck = (variantsConfigs, registered) => (obj, ...parents) => {
     return where(config, registered)(obj, ...parents)
   })
 }
-function validateConfig(config) {
+function validateConfig (config) {
   if (isnt(config)('string', 'function', 'object', 'array')) {
     throw new TypeError(
       'config must be either name of registered config, isValid function or object config'
@@ -73,7 +75,7 @@ function validateConfig(config) {
   return true
 }
 
-function where(config, registered) {
+function where (config, registered) {
   validateConfig(config)
   switch (getType(config)) {
     case 'string':
@@ -88,7 +90,7 @@ function where(config, registered) {
       return false
   }
 }
-function checkRecursivity(config, history = []) {
+function checkRecursivity (config, history = []) {
   if (history.includes(config)) {
     throw new TypeError('Config must be not recursive')
   }
@@ -100,7 +102,7 @@ function checkRecursivity(config, history = []) {
   }
 }
 
-function isEmpty(x) {
+function isEmpty (x) {
   switch (getType(x)) {
     case 'string':
       return x === ''
@@ -146,27 +148,27 @@ const getDefaultConfigs = () => ({
   symbol: x => typeof x === 'symbol',
   function: x => typeof x === 'function',
   log: (value, ...parents) => {
-    console.log({value, parents})
+    console.log({ value, parents })
     return true
   },
   required: (_, parentKeyValue) => {
     if (!parentKeyValue) {
       return true
     }
-    const {key, parent} = parentKeyValue
+    const { key, parent } = parentKeyValue
     return Object.prototype.hasOwnProperty.call(parent, key)
   }
 })
 
 const newContext = registered => {
-  function func(config, registered = func.registered) {
+  function func (config, registered = func.registered) {
     if (config === undefined) {
       return resetExplanation()
     }
     checkRecursivity(config)
     return where(config, registered)
   }
-  function resetExplanation() {
+  function resetExplanation () {
     func.explanation = []
     return func
   }
@@ -179,7 +181,7 @@ const newContext = registered => {
   registered = registered || getDefaultConfigs()
   const methods = {
     registered,
-    register(additionalRegistered) {
+    register (additionalRegistered) {
       if (isnt(additionalRegistered)('object')) {
         throw new TypeError('additionalRegistered must be an object')
       }
@@ -188,9 +190,9 @@ const newContext = registered => {
         validateConfig(config)
       }
 
-      return newContext({...func.registered, ...additionalRegistered})
+      return newContext({ ...func.registered, ...additionalRegistered })
     },
-    isValidConfig(config) {
+    isValidConfig (config) {
       try {
         checkRecursivity(config)
         validateConfig(config)
@@ -199,14 +201,14 @@ const newContext = registered => {
         return false
       }
     },
-    validateConfig(config) {
+    validateConfig (config) {
       checkRecursivity(config)
       validateConfig(config)
     },
-    required(...propNames) {
+    required (...propNames) {
       return obj => propNames.every(prop => Object.prototype.hasOwnProperty.call(obj, prop))
     },
-    requiredIf(config) {
+    requiredIf (config) {
       const isRequired = is(config)('boolean') ? () => config : func(config)
       return (obj, ...parents) => {
         if (isRequired(obj, ...parents)) {
@@ -215,7 +217,7 @@ const newContext = registered => {
         return true
       }
     },
-    arrayOf(config) {
+    arrayOf (config) {
       const isValidElement = func(config).bind(this)
       return function (arr, ...parents) {
         if (!Array.isArray(arr)) {
@@ -224,14 +226,14 @@ const newContext = registered => {
         let isValid = true
         for (let i = 0; i < arr.length; i++) {
           const el = arr[i]
-          if (!isValidElement(el, {key: i, parent: arr}, ...parents)) {
+          if (!isValidElement(el, { key: i, parent: arr }, ...parents)) {
             isValid = false
           }
         }
         return isValid
       }
     },
-    dictionaryOf(config) {
+    dictionaryOf (config) {
       const isValidElement = func(config).bind(this)
       return function (obj, ...parents) {
         if (isnt(obj)('object')) {
@@ -241,7 +243,7 @@ const newContext = registered => {
         for (const [key, value] of Object.entries(obj)) {
           const isValidValue = isValidElement(
             value,
-            {key, parent: obj},
+            { key, parent: obj },
             ...parents
           )
           if (!isValidValue) {
@@ -251,11 +253,11 @@ const newContext = registered => {
         return isValid
       }
     },
-    keys(config) {
+    keys (config) {
       const isValidKey = func(config)
       return obj => Object.keys(obj).every(isValidKey)
     },
-    throwError(config, errorMessage = 'Validation error') {
+    throwError (config, errorMessage = 'Validation error') {
       if (isnt(errorMessage)('string', 'function')) {
         throw new TypeError(
           'errorMessage must be a string, or function that returns string'
@@ -277,7 +279,7 @@ const newContext = registered => {
         throw new TypeError(errorMessage)
       }
     },
-    min(minValue) {
+    min (minValue) {
       if (isnt(minValue)('number')) {
         throw new TypeError('minValue must be a number')
       }
@@ -296,7 +298,7 @@ const newContext = registered => {
         }
       }
     },
-    max(maxValue) {
+    max (maxValue) {
       if (isnt(maxValue)('number')) {
         throw new TypeError('maxValue must be a number')
       }
@@ -315,39 +317,39 @@ const newContext = registered => {
         }
       }
     },
-    regex(regex) {
+    regex (regex) {
       if (!(regex instanceof RegExp)) {
         throw new TypeError('regex can takes only RegExp instances')
       }
       return str => regex.test(str)
     },
-    explain(
+    explain (
       config,
-      getExplanation = (value, ...parents) => ({value, parents})
+      getExplanation = (value, ...parents) => ({ value, parents })
     ) {
       const isValid = func(config).bind(this)
-      function f(obj, ...parents) {
+      function f (obj, ...parents) {
         resetExplanation()
         if (isValid(obj, ...parents)) {
           return true
         }
-        const explanation = is(getExplanation)('function') ?
-          getExplanation(obj, ...parents) :
-          getExplanation
+        const explanation = is(getExplanation)('function')
+          ? getExplanation(obj, ...parents)
+          : getExplanation
         func.explanation.push(explanation)
         f.explanation.push(explanation)
         return false
       }
-      function resetExplanation() {
+      function resetExplanation () {
         f.explanation = []
       }
       return f
     },
-    not(config) {
+    not (config) {
       const isValid = func(config)
       return (obj, ...parents) => !isValid(obj, ...parents)
     },
-    omitInvalidItems(config) {
+    omitInvalidItems (config) {
       const isValid = func(config)
 
       return function (obj) {
@@ -356,18 +358,18 @@ const newContext = registered => {
         }
         if (is(obj)('array')) {
           return obj.filter((value, i) =>
-            isValid(value, {key: i, parent: obj})
+            isValid(value, { key: i, parent: obj })
           )
         }
         return Object.entries(obj)
-          .filter(([key, value]) => isValid(value, {key, parent: obj}))
+          .filter(([key, value]) => isValid(value, { key, parent: obj }))
           .reduce((obj, [key, value]) => {
             obj[key] = value
             return obj
           }, {})
       }
     },
-    omitInvalidProps(objConfig, settings = {omitUnchecked: true}) {
+    omitInvalidProps (objConfig, settings = { omitUnchecked: true }) {
       if (isnt(settings)('object')) {
         throw new TypeError('settings must be object')
       }
@@ -376,7 +378,7 @@ const newContext = registered => {
           'settings.omitUnchecked must be boolean, or undefined'
         )
       }
-      const {omitUnchecked: omitUnchecked = true} = settings
+      const { omitUnchecked: omitUnchecked = true } = settings
 
       while (isnt(objConfig)('object') && is(objConfig)('string')) {
         objConfig = func.registered[objConfig]
@@ -389,7 +391,7 @@ const newContext = registered => {
           return obj
         }
         if (!omitUnchecked) {
-          const newObj = {...obj}
+          const newObj = { ...obj }
           for (const [key, innerConfig] of Object.entries(objConfig)) {
             const isValidProp = func(innerConfig)
             if (!isValidProp(obj[key])) {
@@ -409,7 +411,7 @@ const newContext = registered => {
           }, {})
       }
     },
-    validOr(config, defaultValue) {
+    validOr (config, defaultValue) {
       validateConfig(config)
       return function (obj) {
         const isValid = func(config)
@@ -419,7 +421,7 @@ const newContext = registered => {
         return obj
       }
     },
-    enum(...primitive) {
+    enum (...primitive) {
       const elementSet = new Set(primitive)
       return function (value) {
         return elementSet.has(value)
