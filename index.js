@@ -73,20 +73,16 @@ function validateConfig (config) {
   return true
 }
 
+const check = {
+  string: stringCheck,
+  function: functionCheck,
+  object: objectCheck,
+  array: variantCheck
+}
+
 function where (config, registered) {
   validateConfig(config)
-  switch (getType(config)) {
-    case 'string':
-      return stringCheck(config, registered)
-    case 'function':
-      return functionCheck(config, registered)
-    case 'object':
-      return objectCheck(config, registered)
-    case 'array':
-      return variantCheck(config, registered)
-    default:
-      return false
-  }
+  return check[getType(config)](config, registered)
 }
 function checkRecursivity (config, history = []) {
   if (history.includes(config)) {
