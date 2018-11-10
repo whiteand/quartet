@@ -471,7 +471,7 @@ describe("min method", () => {
     caption: "number",
     isValid: v.min(5),
     trueValues: [5, 6, 1 / 0],
-    falseValues: [4, 0, NaN, -1 / 0],
+    falseValues: [4, 0, NaN, -1 / 0, Symbol('123')],
     validatorName: "v.min(5)"
   });
   testValidator({
@@ -517,7 +517,7 @@ describe("max method", () => {
     caption: "number",
     isValid: v.max(5),
     trueValues: [5, 4, -1 / 0],
-    falseValues: [6, NaN, 1 / 0],
+    falseValues: [6, NaN, 1 / 0, Symbol('123')],
     validatorName: "v.max(5)"
   });
   testValidator({
