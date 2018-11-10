@@ -1,5 +1,3 @@
-/* jshint esversion: 6 */
-
 const getType = x => {
   if (Array.isArray(x)) {
     return 'array'
