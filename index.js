@@ -423,6 +423,13 @@ const newContext = registered => {
         return elementSet.has(value)
       }
     },
+    parent (config) {
+      validateConfig(config)
+      const isValid = func(config)
+      return function (value, { parent }, ...parents) {
+        return isValid(parent, ...parents)
+      }
+    },
     newContext,
     resetExplanation
   }

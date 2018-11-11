@@ -466,6 +466,17 @@ testValidator({
   validatorName: "bObjValidator"
 });
 
+testValidator({
+  caption: 'parent method',
+  isValid: v({
+    hasB: "boolean",
+    b: v.requiredIf(v.parent(({ hasB }) => hasB))
+  }),
+  trueValues: [{ hasB: true, b: 1 }, { hasB: false }],
+  falseValues: [{ hasB: true }],
+  validatorName: "parent validator"
+})
+
 describe("min method", () => {
   testValidator({
     caption: "number",
