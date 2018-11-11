@@ -695,14 +695,13 @@ Returns validator, that returns true only of value isone of primitiveValues.
 Checks is parent of the value is valid.
 
 ```javascript
-  const obj = { hasValue: true, value: 'number' }
-  const obj2 = { hasValue: false }
-  const invalidObj = { hasValue: true }
-  const schema = {
-    hasValue: 'boolean',
-    value: [
-      [v.parent(parent => !parent.hasValue), 'undefined']
-      'string'
-    ] // value is valid if hasValue is false and it's undefined or if it's 'string'
-  }
+  // example above can be rewritten with using of parent method
+  
+  const bObjValidator = v({
+    hasB: "boolean",
+    b: v.requiredIf(v.parent(p => p.hasB)) // if hasB is true, then b must be required
+  })
+  bObjValidator({ hasB: true, b: 1 }) // => true
+  bObjValidator({ hasB: false }) // => true
+  bObjValidator({ hasB: true }) // => false
 ```
