@@ -426,7 +426,9 @@ const newContext = registered => {
     parent (config) {
       validateConfig(config)
       const isValid = func(config)
-      return function (value, { parent }, ...parents) {
+      return function (value, parentObj, ...parents) {
+        if (!parentObj) return false
+        const { parent } = parentObj
         return isValid(parent, ...parents)
       }
     },

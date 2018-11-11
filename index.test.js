@@ -466,16 +466,28 @@ testValidator({
   validatorName: "bObjValidator"
 });
 
-testValidator({
-  caption: 'parent method',
-  isValid: v({
-    hasB: "boolean",
-    b: v.requiredIf(v.parent(({ hasB }) => hasB))
-  }),
-  trueValues: [{ hasB: true, b: 1 }, { hasB: false }],
-  falseValues: [{ hasB: true }],
-  validatorName: "parent validator"
+describe('parent method', () => {
+  testValidator({
+    caption: 'parent method',
+    isValid: v({
+      hasB: "boolean",
+      b: v.requiredIf(v.parent(({ hasB }) => hasB))
+    }),
+    trueValues: [{ hasB: true, b: 1 }, { hasB: false }],
+    falseValues: [{ hasB: true }],
+    validatorName: "parent validator"
+  })
+  test('without parent returns false', () => {
+    const value = 1
+    expect(v.parent('undefined')(value)).toBe(false)
+    const arr = [1, 2, 3]
+    expect(v.arrayOf(v.parent('array'))(arr)).toBe(true)
+  })
 })
+
+
+
+
 
 describe("min method", () => {
   testValidator({
