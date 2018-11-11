@@ -688,3 +688,21 @@ Returns new instance of validator generator with custom aliases
 
 ### `v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`
 Returns validator, that returns true only of value isone of primitiveValues.
+
+---
+
+### `v.parent :: (config: Config) => Validator`
+Checks is parent of the value is valid.
+
+```javascript
+  const obj = { hasValue: true, value: 'number' }
+  const obj2 = { hasValue: false }
+  const invalidObj = { hasValue: true }
+  const schema = {
+    hasValue: 'boolean',
+    value: [
+      [v.parent(parent => !parent.hasValue), 'undefined']
+      'string'
+    ] // value is valid if hasValue is false and it's undefined or if it's 'string'
+  }
+```
