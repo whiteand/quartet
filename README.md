@@ -475,6 +475,13 @@ isNumberDict({a: 1, b: 2, c: 3}) // => true
 isNumberDict({a: 1, b: 2, c: '3'}) // => false
 ```
 
+`dictionaryOf` can be rewritten with using `v.rest` method
+
+```javascript
+const isNumberDict = v.dictionaryOf('number')
+const isNumberDict2 = v({ ...v.rest('number') })
+```
+
 ---
 
 ### `v.rest :: (config: Config) => object`
