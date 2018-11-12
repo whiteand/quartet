@@ -200,12 +200,13 @@ const newContext = registered => {
       validateConfig(config)
     },
     required (...propNames) {
-      return obj => propNames.every(prop => Object.prototype.hasOwnProperty.call(obj, prop))
+      return obj =>
+        propNames.every(prop =>
+          Object.prototype.hasOwnProperty.call(obj, prop)
+        )
     },
     requiredIf (config) {
-      const isRequired = is(config)('boolean')
-        ? () => config
-        : func(config)
+      const isRequired = is(config)('boolean') ? () => config : func(config)
       return (obj, ...parents) => {
         if (isRequired(obj, ...parents)) {
           return func('required')(obj, ...parents)
