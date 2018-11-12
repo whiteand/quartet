@@ -704,6 +704,8 @@ describe('explain', () => {
     expect(isArrayOfPrimes(arr)).toBe(false)
     const notPrimes = v.explanation.map(({ value }) => value)
     expect(notPrimes).toEqual([1, 4, 6, 8])
+    // Right indexes checking
+    expect(v.arrayOf((v, { key, parent }) => parent[key] === v)(Array(100).fill(2))).toBe(true)
   })
 })
 
@@ -875,7 +877,7 @@ testValidator({
   caption: 'required method',
   isValid: v.required('a', 'b', 'c'),
   trueValues: [{ a: 1, b: 2, c: undefined }, { a: 1, b: 2, c: 3, d: 4 }],
-  falseValues: [{ a: 1, b: 2 }, { a: 1, c: 3, d: 4 }, { c: 3, d: 4 }],
+  falseValues: [{b: 1, c: 1}, { a: 1, b: 2 }, { a: 1, c: 3, d: 4 }, { c: 3, d: 4 }],
   validatorName: `v.required("a", "b", "c")`
 })
 
@@ -975,9 +977,9 @@ testValidator({
   validatorName: `v.not("number")`
 })
 
-describe("withoutAdditionalProps", () => {
+describe('withoutAdditionalProps', () => {
   test('wrong input', () => {
-    const wrongConfigs = [1,false, null, undefined, 'wrong object validator']
+    const wrongConfigs = [1, false, null, undefined, 'wrong object validator']
     for (const wrongConfig of wrongConfigs) {
       expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('objConfig must be object with required props'))
     }
@@ -993,9 +995,9 @@ describe("withoutAdditionalProps", () => {
   })
   testValidator({
     caption: 'string input',
-    isValid: v.register({obj: {
+    isValid: v.register({ obj: {
       a: 'number'
-    }}).withoutAdditionalProps('obj'),
+    } }).withoutAdditionalProps('obj'),
     trueValues: [{ a: 1 }, { a: 0 }],
     falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
     validatorName: `v.withoutAdditionalProps({ a: 'number' })`
@@ -1005,10 +1007,7 @@ describe("withoutAdditionalProps", () => {
 describe('rest props validation', () => {
   test('wrong input', () => {
     expect(() => {
-      const isValid = {
-        a: 'number',
-        ...v.rest(1)
-      }
+      v.rest(1)
     }).toThrowError(new TypeError(
       'config must be either name of registered config, isValid function or object config'
     ))
@@ -1018,9 +1017,8 @@ describe('rest props validation', () => {
   testValidator({
     caption: 'right input - without rest props',
     isValid: v(restValidatorSchema),
-    trueValues: [{ a: 1 }, { a: 2, b: '3'}, { a: 3, b: '4', c: '5'}],
-    falseValues: [{ a: '1' }, { a: 2, b: 3}, { a: 3, b: '4', c: 5 }],
+    trueValues: [{ a: 1 }, { a: 2, b: '3' }, { a: 3, b: '4', c: '5' }],
+    falseValues: [{ a: '1' }, { a: 2, b: 3 }, { a: 3, b: '4', c: 5 }],
     validatorName: `v({ a: 'number', ...v.rest('string')})`
   })
-
 })

@@ -233,7 +233,7 @@ const newContext = registered => {
       }
     },
     arrayOf (config) {
-      const isValidElement = func(config).bind(this)
+      const isValidElement = func(config)
       return function (arr, ...parents) {
         if (!Array.isArray(arr)) {
           return false
@@ -249,7 +249,7 @@ const newContext = registered => {
       }
     },
     dictionaryOf (config) {
-      const isValidElement = func(config).bind(this)
+      const isValidElement = func(config)
       return function (obj, ...parents) {
         if (isnt(obj)('object')) {
           return false
@@ -342,7 +342,7 @@ const newContext = registered => {
       config,
       getExplanation = (value, ...parents) => ({ value, parents })
     ) {
-      const isValid = func(config).bind(this)
+      const isValid = func(config)
       function f (obj, ...parents) {
         resetExplanation()
         if (isValid(obj, ...parents)) {
