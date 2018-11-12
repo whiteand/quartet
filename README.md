@@ -474,7 +474,32 @@ const isNumberDict = v.dictionaryOf('number')
 isNumberDict({a: 1, b: 2, c: 3}) // => true
 isNumberDict({a: 1, b: 2, c: '3'}) // => false
 ```
+
 ---
+
+### `v.rest :: (config: Config) => object`
+Returns config that can be spreaded into object validation config to check other properties.
+
+```javascript
+const aAndStrings = v({
+  a: 'number', 
+  ...v.rest('string')
+})
+aAndString({
+  a: 1
+}) // => true
+aAndString({
+  a: 1,
+  b: '1'
+}) // => true
+aAndString({
+  a: 1,
+  b: 2
+}) // => false
+```
+
+---
+
 ### v.keys :: (config: Config) => (dict: object<key, value>) => boolean`
 returns true if all keys used in `dict` are valid using `config`
 
