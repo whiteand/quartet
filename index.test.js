@@ -837,6 +837,7 @@ describe('omitInvalidProps', () => {
       f: 6,
       g: 7
     })
+    expect(onlyPrimesAndF(obj) === obj).toBe(false)
     const onlyPrimes = v.omitInvalidProps({
       a: 'prime',
       b: 'prime',
@@ -846,6 +847,7 @@ describe('omitInvalidProps', () => {
       g: 'prime'
     })
     expect(onlyPrimes(obj)).toEqual({ b: 2, c: 3, e: 5, g: 7 })
+    expect(onlyPrimes(obj) === obj).toBe(false)
   })
 })
 test('validOr method', () => {
