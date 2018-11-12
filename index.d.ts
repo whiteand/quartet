@@ -1,3 +1,4 @@
+declare module 'quartet'
 declare const getType: (x: any) => "string" | "number" | "boolean" | "symbol" | "undefined" | "object" | "function" | "array" | "null" | "set" | "map" | "date";
 
 declare const is: (value: any) => (...types: string[]) => boolean;
@@ -9,7 +10,9 @@ interface ParentKeyValue {
 }
 
 type ValidationFunction = (v: any, ...parents: ParentKeyValue[]) => boolean
-type Config = string|object|((Config|Config[])[])|ValidationFunction
+type Config = string|object|OrConfigs|ValidationFunction
+interface OrConfigs extends Array<Config|AndConfigs> {}
+interface AndConfigs extends Array<Config> {}
 
 interface Registered {
     [configName: string]: Config
@@ -25,7 +28,7 @@ declare function validateConfig(config: any): boolean;
 
 declare const check: {
     string: (configName: string, registered: Registered) => ValidationFunction;
-    function: (isValid: function) => ValidationFunction;
+    function: (isValid: ValidationFunction) => ValidationFunction;
     object: (configObj: object, registered: Registered) => ValidationFunction;
     array: (variantsConfigs: ((Config|Config[])[]), registered: Registered) => ValidationFunction;
 };
