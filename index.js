@@ -17,6 +17,8 @@ const getType = x => {
   return typeof x
 }
 
+const REST_PROPS = Symbol('REST_PROPS')
+
 const is = value => (...types) => types.includes(getType(value))
 
 const isnt = value => (...types) => !types.includes(getType(value))
@@ -38,7 +40,12 @@ const objectCheck = (configObj, registered) => (obj, ...parents) => {
     return false
   }
   let isValid = true
+  const notChecked = new Set(Object.keys(obj))
+  const checked = new Set()
+  
   for (const [key, innerConfig] of Object.entries(configObj)) {
+    checked.add(key)
+    notChecked.delete(key)
     const value = obj[key]
     const isValidProperty = where(innerConfig, registered)(
       value,
@@ -46,6 +53,17 @@ const objectCheck = (configObj, registered) => (obj, ...parents) => {
       ...parents
     )
     if (!isValidProperty) {
+      isValid = false
+    }
+  }
+  // If has no rest validation
+  if (is(configObj[REST_PROPS])('undefined')) return isValid
+
+  const restIsValid = where(configObj[REST_PROPS], registered)
+  for (const key of notChecked) {
+    const value = obj[key]
+    const isValidRestValue = restIsValid(value, { key, parent: obj }, ...parents)
+    if (!isValidRestValue) {
       isValid = false
     }
   }
@@ -449,6 +467,12 @@ const newContext = registered => {
         }
         return func(objConfig)(obj, ...parents)
       } 
+    },
+    rest (config) {
+      validateConfig(config)
+      return {
+        [REST_PROPS]: config
+      }
     },
     newContext,
     resetExplanation

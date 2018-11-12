@@ -1001,3 +1001,26 @@ describe("withoutAdditionalProps", () => {
     validatorName: `v.withoutAdditionalProps({ a: 'number' })`
   })
 })
+
+describe('rest props validation', () => {
+  test('wrong input', () => {
+    expect(() => {
+      const isValid = {
+        a: 'number',
+        ...v.rest(1)
+      }
+    }).toThrowError(new TypeError(
+      'config must be either name of registered config, isValid function or object config'
+    ))
+  })
+  const restValidatorSchema = v.rest('string')
+  restValidatorSchema.a = 'number'
+  testValidator({
+    caption: 'right input - without rest props',
+    isValid: v(restValidatorSchema),
+    trueValues: [{ a: 1 }, { a: 2, b: '3'}, { a: 3, b: '4', c: '5'}],
+    falseValues: [{ a: '1' }, { a: 2, b: 3}, { a: 3, b: '4', c: 5 }],
+    validatorName: `v({ a: 'number', ...v.rest('string')})`
+  })
+
+})
