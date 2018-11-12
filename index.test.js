@@ -974,3 +974,30 @@ testValidator({
   falseValues: [1, NaN, 1 / 0, -1 / 0, 1.2, 0],
   validatorName: `v.not("number")`
 })
+
+describe("withoutAdditionalProps", () => {
+  test('wrong input', () => {
+    const wrongConfigs = [1,false, null, undefined, 'wrong object validator']
+    for (const wrongConfig of wrongConfigs) {
+      expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('objConfig must be object with required props'))
+    }
+  })
+  testValidator({
+    caption: 'object input',
+    isValid: v.withoutAdditionalProps({
+      a: 'number'
+    }),
+    trueValues: [{ a: 1 }, { a: 0 }],
+    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
+    validatorName: `v.withoutAdditionalProps({ a: 'number' })`
+  })
+  testValidator({
+    caption: 'string input',
+    isValid: v.register({obj: {
+      a: 'number'
+    }}).withoutAdditionalProps('obj'),
+    trueValues: [{ a: 1 }, { a: 0 }],
+    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
+    validatorName: `v.withoutAdditionalProps({ a: 'number' })`
+  })
+})

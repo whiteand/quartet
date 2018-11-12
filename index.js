@@ -433,6 +433,23 @@ const newContext = registered => {
         return isValid(parent, ...parents)
       }
     },
+    withoutAdditionalProps (objConfig) {
+      while (is(objConfig)('string')) {
+        objConfig = func.registered[objConfig]
+      }
+      if (isnt(objConfig)('object')) {
+        throw new TypeError('objConfig must be object with required props')
+      }
+      const possibleProps = new Set(Object.keys(objConfig))
+      return function (obj, ...parents) {
+        if (isnt(obj)('object')) return false
+        const objKeys = Object.keys(obj)
+        if (objKeys.some(prop => !possibleProps.has(prop))) {
+          return false
+        }
+        return func(objConfig)(obj, ...parents)
+      } 
+    },
     newContext,
     resetExplanation
   }
