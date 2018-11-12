@@ -705,3 +705,15 @@ Checks is parent of the value is valid.
   bObjValidator({ hasB: false }) // => true
   bObjValidator({ hasB: true }) // => false
 ```
+
+### `v.withoutAdditionalProps :: (config: object|string) => Validator`
+Returns true only if passed value is object and has valid props and has not any additional properties.
+
+```javascript
+  const onlyANumber = v.withoutAdditionalProps({ a: 'number' })
+  onlyANumber(null) // => false
+  onlyANumber(1) // => false
+  onlyANumber({ a: 1 }) // => true
+  onlyANumber({ a: '1' }) // => false
+  onlyANumber({ a: 1, b: 2 }) // => false
+```
