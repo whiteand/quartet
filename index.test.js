@@ -605,12 +605,21 @@ describe('explain', () => {
   test('firstly v must have empty explanation', () => {
     const v2 = v.newContext()
     expect(typeof v2).toBe('function')
-    const isValidNumber = v2.explain('number', 1)
+    const isValidNumber = v2.explain('number', v => v)
+
     expect(isValidNumber('1')).toBe(false)
-    expect(v2.explanation).toEqual([1])
+    expect(isValidNumber.explanation).toEqual(['1'])
+    expect(v2.explanation).toEqual(['1'])
+
+    expect(isValidNumber('1')).toBe(false)
+    expect(v2.explanation).toEqual(['1', '1'])
+    expect(isValidNumber.explanation).toEqual(['1', '1'])
+
     v2()
     expect(v2.explanation).toEqual([])
-    expect(isValidNumber.explanation).toEqual([1])
+    expect(isValidNumber.explanation).toEqual(['1', '1'])
+    isValidNumber.resetExplanation()
+    expect(isValidNumber.explanation).toEqual([])
   })
   test('without explanation', () => {
     const isValid = v().explain('number')
@@ -796,6 +805,13 @@ describe('omitInvalidProps', () => {
     ).toThrowError(
       new TypeError('settings.omitUnchecked must be boolean, or undefined')
     )
+    expect((() => {
+      try {
+        v.omitInvalidProps('wrong', { omitUnchecked: 1 })
+      } catch (error) {
+        return error
+      }
+    })()).toBeInstanceOf(TypeError)
     expect(
       v.omitInvalidProps({ a: 'number' }, { omitUnchecked2: 1 })({ a: 1, b: 1 })
     ).toEqual({ a: 1 })

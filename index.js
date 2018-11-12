@@ -344,7 +344,6 @@ const newContext = registered => {
     ) {
       const isValid = func(config)
       function f (obj, ...parents) {
-        resetExplanation()
         if (isValid(obj, ...parents)) {
           return true
         }
@@ -355,9 +354,11 @@ const newContext = registered => {
         f.explanation.push(explanation)
         return false
       }
-      function resetExplanation () {
+      function innerResetExplanation () {
         f.explanation = []
       }
+      innerResetExplanation()
+      f.resetExplanation = innerResetExplanation
       return f
     },
     not (config) {
