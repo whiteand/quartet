@@ -307,5 +307,14 @@ module.exports = () => ({
           return obj
         }, {})
     }
+  },
+  withoutAdditionalProps (config) {
+    while (is(config)('string', 'symbol')) {
+      config = this.registered[config]
+    }
+    if (isnt(config)('object')) {
+      throw new TypeError('Config must be an object config')
+    }
+    return this({ ...config, ...this.rest(() => false) })
   }
 })

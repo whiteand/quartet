@@ -1074,3 +1074,30 @@ describe('not all errors', () => {
     expect(cValidator).toBeCalledTimes(1)
   })
 })
+
+describe('withoutAdditionalProps', () => {	
+  test('wrong input', () => {	
+    const wrongConfigs = [1, false, null, undefined, 'wrong object validator']	
+    for (const wrongConfig of wrongConfigs) {	
+      expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('Config must be an object config'))	
+    }	
+  })	
+  testValidator({	
+    caption: 'object input',	
+    isValid: v.withoutAdditionalProps({	
+      a: 'number'	
+    }),	
+    trueValues: [{ a: 1 }, { a: 0 }],	
+    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],	
+    validatorName: `v.withoutAdditionalProps({ a: 'number' })`	
+  })	
+  testValidator({	
+    caption: 'string input',	
+    isValid: v.register({ obj: {	
+      a: 'number'	
+    } }).withoutAdditionalProps('obj'),	
+    trueValues: [{ a: 1 }, { a: 0 }],	
+    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],	
+    validatorName: `v.withoutAdditionalProps({ a: 'number' })`	
+  })	
+})
