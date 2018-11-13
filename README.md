@@ -354,7 +354,11 @@ Example of wrong insertion
 const isValidPassword = [['string', v.min(5)]]
 const wrongIsValidPasswordOrNull = [isValidPassword, 'null]
 // because it will be schema [[['string', v.min(5)]], 'null]
-// And nested combinators will be treated as 'string' *or* v.min(5)'
+// And nested combinators will be treated as ((('string' *or* v.min(5)')) *or* null)
+```
+```Right insertion
+const isValidPassword = [['string', v.min(5)]]
+const isValidPasswordOrNull = [v(isValidPassword), 'null]
 ```
 
 # Default registered validators
