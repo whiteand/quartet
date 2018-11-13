@@ -347,6 +347,16 @@ const isObjectValidConfig = {
 v(isObjectValidConfig)(obj);
 ```
 
+## WARNING: if you want to insert one schema into other - compile them into valiation function.
+
+Example of wrong insertion
+```javascript
+const isValidPassword = [['string', v.min(5)]]
+const wrongIsValidPasswordOrNull = [isValidPassword, 'null]
+// because it will be schema [[['string', v.min(5)]], 'null]
+// And nested combinators will be treated as 'string' *or* v.min(5)'
+```
+
 # Default registered validators
 
 There are such registered validators by default:
@@ -772,15 +782,10 @@ Let's take an example, and rewrote explanation schema with using OR combinator f
 // This is not changed
 const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
 const schema = {
-  // string with length from 3 to 30
   username: [['string', v.min(3), v.max(30)]], 
-  // string with special pattern
   password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], 
-  // string or number
   access_token: ['string', 'number'],
-  // integer number from 1900 to 2013
   birthyear: [['safe-integer', v.min(1900), v.max(2013)]], 
-  // email
   email: [['string', v.regex(emailRegex)]]
 }
 // Let's write a helper function expl(code: string): void
@@ -795,7 +800,6 @@ function expl(code) {
 
 const EXPLANATION = {
   NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
-  // as an explanation we will use propname, just for example
   USER_NAME: 'username', 
   PASSWORD: 'password', 
   ACCESS_TOKEN: 'access_token',
