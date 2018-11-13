@@ -284,7 +284,9 @@ This complexity is bad. It's scary thing that people hate.
 
 Complexity can be defeated by _composition_.
 
-We use combinators for creating composition:
+We use combinators for creating composition.
+
+There is *OR-composition*. It combines validations in such way that it returns true if some of validations are true.
 It uses a such syntax:
 
 ```javascript
@@ -292,20 +294,21 @@ v([
     orConfig,
     orConfig2,
     orConfig3,
-    [ // orConfig 4
-        andConfig,
-        andConfig2,
-        [// andConfig 3
-            orConfig,
-            orConfig2,
-            ...
-        ],
-        ...
-    ],
     ...
 ])
 ```
-
+There is *AND-composition*. It combines validations in such way that it returns true only if all of validations are true.
+It uses a such syntax:
+```javascript
+v.and(
+  andConfig,
+  andConfig2,
+  andConfig3,
+  andConfig4,
+  andConfig5,
+  ...
+)
+```
 So you can see that first level of nestedness is - OR operator. Second level - AND operator. Third - is OR operator and so on.
 
 Let's try to create example of complexity, and destroy it with using registered validators and combinators.
@@ -345,20 +348,6 @@ const isObjectValidConfig = {
   }
 };
 v(isObjectValidConfig)(obj);
-```
-
-## WARNING: if you want to insert one schema into other - compile them into valiation function.
-
-Example of wrong insertion
-```javascript
-const isValidPassword = [['string', v.min(5)]]
-const wrongIsValidPasswordOrNull = [isValidPassword, 'null]
-// because it will be schema [[['string', v.min(5)]], 'null]
-// And nested combinators will be treated as ((('string' *or* v.min(5)')) *or* null)
-```
-```Right insertion
-const isValidPassword = [['string', v.min(5)]]
-const isValidPasswordOrNull = [v(isValidPassword), 'null]
 ```
 
 # Default registered validators
