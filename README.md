@@ -773,7 +773,6 @@ It's the same trick that we can use when write such things
 We can add "validation" function as a last element of OR combinator - in such way it will be started only if all previous validators return false. And this validator must returns false - because it just used for side effect, but not for validation.
 Let's take an example, and rewrote explanation schema with using OR combinator for creating array of validation explanation.
 ```javascript
-
 // This is not changed
 const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
 const schema = {
@@ -802,8 +801,7 @@ const EXPLANATION = {
   EMAIL: 'email'
 }
 // v.explain takes schema and explanation
-const explanationSchema = [
-  {
+const explanationSchema = {
     username: [
       // if it's false, next validator will be run
       schema.username, 
@@ -826,9 +824,7 @@ const explanationSchema = [
       schema.email,
       expl(EXPLANATION.EMAIL)
     ]
-  },
-  expl(NATION.NOT_A_VALID_OBJECT)
-]
+  }
 
 v(explanationSchema)({
   // wrong
@@ -842,7 +838,7 @@ v(explanationSchema)({
 })
 
 // explanation was changed by side effect of last functions
-explanation // => ['username', 'access_token', 'email']
+console.log(explanation) // => ['username', 'access_token', 'email']
 ```
 
 
