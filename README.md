@@ -19,6 +19,7 @@ Library for validations: beautiful and convenient
   - [Registered validations](#registered-validations)
 - [Default registered validators](#default-registered-validators)
 - [Methods](#methods)
+- [Tips and Tricks](#tips-and-tricks)
 #  Example
 
 ```javascript
@@ -750,3 +751,99 @@ Returns true only if passed value is object and has valid props and has not any 
   onlyANumber({ a: '1' }) // => false
   onlyANumber({ a: 1, b: 2 }) // => false
 ```
+
+# Tips and Tricks
+
+## Using OR combinator for explanation function
+
+It's the same trick that we can use when write such things
+```javascript
+  let a = 1
+  let setA = value => { a = value }
+  true || setA(10)
+  a // => 1
+  false || setA(10)
+  a // => 10
+```
+We can add "validation" function as a last element of OR combinator - in such way it will be started only if all previous validators return false. And this validator must returns false - because it just used for side effect, but not for validation.
+Let's take an example, and rewrote explanation schema with using OR combinator for creating array of validation explanation.
+```javascript
+
+// This is not changed
+const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
+const schema = {
+  // string with length from 3 to 30
+  username: [['string', v.min(3), v.max(30)]], 
+  // string with special pattern
+  password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], 
+  // string or number
+  access_token: ['string', 'number'],
+  // integer number from 1900 to 2013
+  birthyear: [['safe-integer', v.min(1900), v.max(2013)]], 
+  // email
+  email: [['string', v.regex(emailRegex)]]
+}
+// Let's write a helper function expl(code: string): void
+let explanation = []
+function expl(code) {
+  // this is false validator with side effect
+  return function pushCodeToExplanation() {
+    explanation.push(code)
+    return false 
+  }
+}
+
+const EXPLANATION = {
+  NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
+  // as an explanation we will use propname, just for example
+  USER_NAME: 'username', 
+  PASSWORD: 'password', 
+  ACCESS_TOKEN: 'access_token',
+  BIRTH_YEAR: 'birth_year',
+  EMAIL: 'email'
+}
+// v.explain takes schema and explanation
+const explanationSchema = [
+  {
+    username: [
+      // if it's false, next validator will be run
+      schema.username, 
+      // this is false validator with sideeffect of pushing code into explanation
+      expl(EXPLANATION.USER_NAME) 
+    ],  
+    password: [
+      schema.password,
+      expl(EXPLANATION.PASSWORD) // will be run if password doesn't follow the schema
+    ], 
+    access_token: [
+      schema.access_token,
+      expl(EXPLANATION.ACCESS_TOKEN)
+    ], 
+    birthyear: [
+      schema.birthyear,
+      expl(EXPLANATION.BIRTH_YEAR)
+    ], 
+    email: [
+      schema.email,
+      expl(EXPLANATION.EMAIL)
+    ]
+  },
+  expl(NATION.NOT_A_VALID_OBJECT)
+]
+
+v(explanationSchema)({
+  // wrong
+  username: 'an', 
+  password: '123456qQ',
+  // wrong
+  access_token: null, 
+  birthyear: 1996,
+  // wrong
+  email: '213' 
+})
+
+// explanation was changed by side effect of last functions
+explanation // => ['username', 'access_token', 'email']
+```
+
+
