@@ -31,15 +31,15 @@ const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\
 
 const schema = {
   // string with length from 3 to 30
-  username: [['string', v.min(3), v.max(30)]], 
+  username: v.and('string', v.min(3), v.max(30)), 
   // string with special pattern
-  password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], 
+  password: v.and('string', v.regex(/^[a-zA-Z0-9]{3,30}$/)), 
   // string or number
   access_token: ['string', 'number'],
   // integer number from 1900 to 2013
-  birthyear: [['safe-integer', v.min(1900), v.max(2013)]], 
+  birthyear: v.and('safe-integer', v.min(1900), v.max(2013)), 
   // email
-  email: [['string', v.regex(emailRegex)]]
+  email: v.and('string', v.regex(emailRegex))
 }
 
 const isValidObj = v(schema)
@@ -342,7 +342,7 @@ const isObjectValidConfig = {
   theString: "string",
   theArrayOfNumbers: v.arrayOf("number"),
   theNull: "null",
-  theRequiredUndefinedOrNumber: [["required", ["undefined", "number"]]],
+  theRequiredUndefinedOrNumber: v.and("required", ["undefined", "number"]),
   theObject: {
     innerProp: "number"
   }
@@ -557,6 +557,31 @@ If value instanceof Map, returns true only if
 
 `value.size >= minValue`
 
+```javascript
+v.min(5)(4) // => false
+v.min(5)(5) // => true
+v.min(5)(6) // => true
+
+const isValidYear = v(v.and('number', v.min(1900), v.max(2100)))
+isValidYear('1875') // => false, because of type string
+isValidYear(1875) // => false
+isValidYear(1996) // => true
+isValidYear(2150) // => false
+
+v.min(5)([1,2,3,4]) // => false
+v.min(5)([1,2,3,4,5]) // => true
+v.min(5)([1,2,3,4,5,6]) // => true
+
+const isValidMiddleSizeArrayOfNumbers = v(v.and(v.arrayOf('number'), v.min(5), v.max(10)))
+isValidMiddleSizeArrayOfNumbers([1,2,3,4,'5',6]) // => false, because of '5'
+isValidMiddleSizeArrayOfNumbers([1,2,3]) // => false, because of length
+isValidMiddleSizeArrayOfNumbers([1,2,3, 4,5,6,7]) // => true
+
+v.min(5)('1234') // => false
+v.min(5)('12345') // => true
+v.min(5)('12346') // => true
+```
+
 ### `v.max :: (maxValue: number) => value => boolean`
 
 If value is array, returns true only if
@@ -580,29 +605,6 @@ If value instanceof Map, returns true only if
 `value.size <= maxValue`
 
 ```javascript
-v.min(5)(4) // => false
-v.min(5)(5) // => true
-v.min(5)(6) // => true
-
-const isValidYear = v([['number', v.min(1900), v.max(2100)]])
-isValidYear('1875') // => false, because of type string
-isValidYear(1875) // => false
-isValidYear(1996) // => true
-isValidYear(2150) // => false
-
-v.min(5)([1,2,3,4]) // => false
-v.min(5)([1,2,3,4,5]) // => true
-v.min(5)([1,2,3,4,5,6]) // => true
-
-const isValidMiddleSizeArrayOfNumbers = v([[v.arrayOf('number'), v.min(5), v.max(10)]])
-isValidMiddleSizeArrayOfNumbers([1,2,3,4,'5',6]) // => false, because of '5'
-isValidMiddleSizeArrayOfNumbers([1,2,3]) // => false, because of length
-isValidMiddleSizeArrayOfNumbers([1,2,3, 4,5,6,7]) // => true
-
-v.min(5)('1234') // => false
-v.min(5)('12345') // => true
-v.min(5)('12346') // => true
-
 v.max(5)(6) // => false
 v.max(5)(5) // => true
 v.max(5)(4) // => true
@@ -615,7 +617,7 @@ v.max(5)('123456') // => false
 v.max(5)('12345') // => true
 v.max(5)('1234') // => true
 
-const isValidName = v([['string', v.min(8), v.max(16)]])
+const isValidName = v(v.and('string', v.min(8), v.max(16)))
 isValidName('andrew') // => false
 isValidName('andrew beletskiy') // => true
 ```
