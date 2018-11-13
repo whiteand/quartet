@@ -777,11 +777,11 @@ Let's take an example, and rewrote explanation schema with using OR combinator f
 // This is not changed
 const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
 const schema = {
-  username: [['string', v.min(3), v.max(30)]], 
-  password: [['string', v.regex(/^[a-zA-Z0-9]{3,30}$/)]], 
+  username: v.and('string', v.min(3), v.max(30)), 
+  password: v.and('string', v.regex(/^[a-zA-Z0-9]{3,30}$/)), 
   access_token: ['string', 'number'],
-  birthyear: [['safe-integer', v.min(1900), v.max(2013)]], 
-  email: [['string', v.regex(emailRegex)]]
+  birthyear: v.and('safe-integer', v.min(1900), v.max(2013)), 
+  email: v.and('string', v.regex(emailRegex))
 }
 // Let's write a helper function expl(code: string): void
 let explanation = []
