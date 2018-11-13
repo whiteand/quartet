@@ -44,9 +44,7 @@ describe('stringCheck function', () => {
   })
   test('wrong name of config', () => {
     expect(() => v('wrong name of validator')(1)).toThrowError(
-      new TypeError(
-        'Reference to not registered config: wrong name of validator'
-      )
+      new TypeError(`'wrong name of validator' is not a registered config`)
     )
   })
 })
@@ -65,8 +63,8 @@ describe('functionCheck function', () => {
 
 describe('objectCheck function', () => {
   test('value is not object branch', () => {
-    expect(v({ a: 'number ' })(1)).toBe(false)
-    expect(v({ a: 'number ' })(null)).toBe(false)
+    expect(v({ a: 'number' })(1)).toBe(false)
+    expect(v({ a: 'number' })(null)).toBe(false)
   })
   test('no into loop of entries', () => {
     expect(v({})({})).toBe(true)
@@ -117,13 +115,13 @@ describe('combinators', () => {
     const retTrue3 = jest.fn(() => true)
     const retFalse = jest.fn(() => false)
 
-    expect(v([[retFalse, retTrue]])('value')).toBe(false)
+    expect(v([v.and(retFalse, retTrue)])('value')).toBe(false)
 
     expect(retFalse).toBeCalledWith('value')
     expect(retFalse).toBeCalledTimes(1);
     [retTrue, retTrue2, retTrue3, retFalse].forEach(f => f.mockClear())
 
-    expect(v([[retTrue, retFalse, retTrue2, retTrue3]])('value')).toBe(false)
+    expect(v([v.and(retTrue, retFalse, retTrue2, retTrue3)])('value')).toBe(false)
     expect(retTrue).toBeCalledTimes(1)
     expect(retTrue).toBeCalledWith('value')
     expect(retFalse).toBeCalledTimes(1)
@@ -131,7 +129,7 @@ describe('combinators', () => {
     expect(retTrue2).toBeCalledTimes(0);
     [retTrue, retTrue2, retTrue3, retFalse].forEach(f => f.mockClear())
 
-    expect(v([[retTrue, retTrue2, retTrue3]])('value')).toBe(true)
+    expect(v([v.and(retTrue, retTrue2, retTrue3)])('value')).toBe(true)
 
     expect(retTrue).toBeCalledTimes(1)
     expect(retTrue).toBeCalledWith('value')
@@ -140,7 +138,7 @@ describe('combinators', () => {
     expect(retTrue3).toBeCalledTimes(1)
     expect(retTrue3).toBeCalledWith('value')
 
-    expect(v([[]])('value')).toBe(true)
+    expect(v([v.and()])('value')).toBe(true)
   })
 })
 describe('validate config', () => {})
@@ -319,7 +317,7 @@ testValidator({
 testValidator({
   caption: 'isValidConfig method',
   isValid: v.isValidConfig,
-  trueValues: [{}, 'a', [['string']], () => true],
+  trueValues: [{}, 'number', [['string']], [], { a: 'number' }, () => true],
   falseValues: [
     null,
     1,
@@ -349,9 +347,13 @@ describe('validateConfig', () => {
       v.validateConfig(config)
     }).toThrowError(
       new TypeError(
-        'config must be either name of registered config, isValid function or object config'
+        'config must be string|symbol|array|function|object'
       )
     )
+  })
+  test('returns config if valid', () => {
+    const config = { ...v.rest('number') }
+    expect(v.validateConfig(config)).toBe(config)
   })
 })
 
@@ -371,11 +373,12 @@ testValidator({
     1,
     new Set([1, 2, 3]),
     new Map([[1, 2]]),
+    new Set([]), new Map(),
     new Date(),
     {},
     Symbol('123')
   ],
-  falseValues: ['', [], 0, null, undefined, false, new Set([]), new Map()],
+  falseValues: ['', [], 0, null, undefined, false],
   validatorName: 'not-empty'
 })
 
@@ -457,6 +460,8 @@ test('requiredIf method: boolean argument', () => {
   expect({ a: 1 }).toBeTrueValueOf(aNotRequired)
   expect({}).toBeFalseValueOf(aRequired)
   expect({}).toBeTrueValueOf(aNotRequired)
+  expect(1).toBeTrueValueOf(v.requiredIf(true))
+  expect(1).toBeTrueValueOf(v.requiredIf(false))
 })
 
 testValidator({
@@ -511,23 +516,6 @@ describe('min method', () => {
     falseValues: [[1, 2, 3, 4], []],
     validatorName: 'v.min(5)'
   })
-  testValidator({
-    caption: 'set',
-    isValid: v.min(5),
-    trueValues: [new Set([1, 2, 3, 4, 5]), new Set([1, 2, 3, 4, 5, 6])],
-    falseValues: [
-      new Set([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
-      new Set()
-    ],
-    validatorName: 'v.min(5)'
-  })
-  testValidator({
-    caption: 'map',
-    isValid: v.min(5),
-    trueValues: [new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]])],
-    falseValues: [new Map(), new Map([[1, 1]])],
-    validatorName: 'v.min(5)'
-  })
   test('min wrong param', () => {
     expect(() => v.min('1')).toThrowError(
       new TypeError('minValue must be a number')
@@ -557,28 +545,6 @@ describe('max method', () => {
     falseValues: [[1, 2, 3, 4, 5, 6]],
     validatorName: 'v.max(5)'
   })
-  testValidator({
-    caption: 'set',
-    isValid: v.max(5),
-    trueValues: [
-      new Set([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
-      new Set(),
-      new Set([1, 2, 3, 4, 5])
-    ],
-    falseValues: [new Set([1, 2, 3, 4, 5, 6])],
-    validatorName: 'v.max(5)'
-  })
-  testValidator({
-    caption: 'map',
-    isValid: v.max(5),
-    trueValues: [
-      new Map(),
-      new Map([[1, 1]]),
-      new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]])
-    ],
-    falseValues: [new Map([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6]])],
-    validatorName: 'v.max(5)'
-  })
   test('wrong input param', () => {
     expect(() => v.max('1')).toThrowError(
       new TypeError('maxValue must be a number')
@@ -603,7 +569,7 @@ describe('regex method', () => {
 
 describe('explain', () => {
   test('firstly v must have empty explanation', () => {
-    const v2 = v.newContext()
+    const v2 = v.newCompiler()
     expect(typeof v2).toBe('function')
     const isValidNumber = v2.explain('number', v => v)
 
@@ -893,7 +859,7 @@ testValidator({
   caption: 'required method',
   isValid: v.required('a', 'b', 'c'),
   trueValues: [{ a: 1, b: 2, c: undefined }, { a: 1, b: 2, c: 3, d: 4 }],
-  falseValues: [{b: 1, c: 1}, { a: 1, b: 2 }, { a: 1, c: 3, d: 4 }, { c: 3, d: 4 }],
+  falseValues: [{ b: 1, c: 1 }, { a: 1, b: 2 }, { a: 1, c: 3, d: 4 }, { c: 3, d: 4 }],
   validatorName: `v.required("a", "b", "c")`
 })
 
@@ -910,15 +876,20 @@ describe('register method', () => {
       v.register()
     }).toThrowError(new TypeError('additionalRegistered must be an object'))
   })
+  test('invalid path', () => {
+    expect(() => {
+      v.register({ value: '1' })
+    }).toThrowError(new TypeError('some of registered configs is invalid'))
+  })
 })
 
-describe('newContext', () => {
-  test('not an object registered', () => {
+describe('newCompiler', () => {
+  test('not an object', () => {
     expect(() => {
-      v.newContext(1)
+      v.newCompiler(1)
     }).toThrowError(
       new TypeError(
-        'registered must be an object { key1: config1, key2: config2, ...}'
+        'settings must be an object'
       )
     )
   })
@@ -971,7 +942,7 @@ describe('throwError', () => {
     const validNumber = '1'
     expect(() => v.throwError('number', value => 1)(validNumber)).toThrowError(
       new TypeError(
-        'errorMessage must be a string, or function that returns string'
+        'Returned value of getErrorMessage is not a string'
       )
     )
   })
@@ -979,7 +950,7 @@ describe('throwError', () => {
     const validNumber = '1'
     expect(() => v.throwError('number', 1)(validNumber)).toThrowError(
       new TypeError(
-        'errorMessage must be a string, or function that returns string'
+        'getErrorMessage must be string|function(): string'
       )
     )
   })
@@ -993,39 +964,12 @@ testValidator({
   validatorName: `v.not("number")`
 })
 
-describe('withoutAdditionalProps', () => {
-  test('wrong input', () => {
-    const wrongConfigs = [1, false, null, undefined, 'wrong object validator']
-    for (const wrongConfig of wrongConfigs) {
-      expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('objConfig must be object with required props'))
-    }
-  })
-  testValidator({
-    caption: 'object input',
-    isValid: v.withoutAdditionalProps({
-      a: 'number'
-    }),
-    trueValues: [{ a: 1 }, { a: 0 }],
-    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
-    validatorName: `v.withoutAdditionalProps({ a: 'number' })`
-  })
-  testValidator({
-    caption: 'string input',
-    isValid: v.register({ obj: {
-      a: 'number'
-    } }).withoutAdditionalProps('obj'),
-    trueValues: [{ a: 1 }, { a: 0 }],
-    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
-    validatorName: `v.withoutAdditionalProps({ a: 'number' })`
-  })
-})
-
 describe('rest props validation', () => {
   test('wrong input', () => {
     expect(() => {
       v.rest(1)
     }).toThrowError(new TypeError(
-      'config must be either name of registered config, isValid function or object config'
+      'config must be string|symbol|array|function|object. JSON: 1'
     ))
   })
   const restValidatorSchema = v.rest('string')
@@ -1036,5 +980,97 @@ describe('rest props validation', () => {
     trueValues: [{ a: 1 }, { a: 2, b: '3' }, { a: 3, b: '4', c: '5' }],
     falseValues: [{ a: '1' }, { a: 2, b: 3 }, { a: 3, b: '4', c: 5 }],
     validatorName: `v({ a: 'number', ...v.rest('string')})`
+  })
+})
+
+describe('not all errors', () => {
+  test('arr validation', () => {
+    v = v.newCompiler({ allErrors: false })
+    const getInvalidKey = v.explain('number', (_, { key }) => key)
+    v.arrayOf(getInvalidKey)([1, '2', '3'])
+    expect(v.explanation).toEqual([1])
+  })
+  test('object validation', () => {
+    v = v.newCompiler({ allErrors: false })
+    const getInvalidKey = v.explain('number', (_, { key }) => key)
+    v.dictionaryOf(getInvalidKey)({
+      a: 1,
+      b: 2,
+      c: '3',
+      d: '4'
+    })
+    expect(v.explanation).toEqual(['c'])
+  })
+  test('keys validation', () => {
+    v = v.newCompiler({ allErrors: false })
+    const getInvalidKey = v.explain(v => 'ab'.includes(v), key => key)
+    v.keys(getInvalidKey)({
+      a: 1,
+      b: 2,
+      c: '3',
+      d: '4'
+    })
+    expect(v.explanation).toEqual(['c'])
+  })
+  test('object validation - true', () => {
+    v = v.newCompiler({ allErrors: false })
+    const aValidator = jest.fn(() => true)
+    const bValidator = jest.fn(() => true)
+    const cValidator = jest.fn(() => true)
+    const getInvalidKey = {
+      a: aValidator,
+      b: bValidator,
+      c: cValidator,
+      ...v.rest(cValidator)
+    }
+    v(getInvalidKey)({
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4
+    })
+    expect(aValidator).toBeCalledTimes(1)
+    expect(bValidator).toBeCalledTimes(1)
+    expect(cValidator).toBeCalledTimes(2)
+  })
+  test('object validation - false', () => {
+    v = v.newCompiler({ allErrors: false })
+    const aValidator = jest.fn(() => true)
+    const bValidator = jest.fn(() => false)
+    const cValidator = jest.fn(() => true)
+    const getInvalidKey = {
+      a: aValidator,
+      b: bValidator,
+      c: cValidator
+    }
+    v(getInvalidKey)({
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4
+    })
+    expect(aValidator).toBeCalledTimes(1)
+    expect(bValidator).toBeCalledTimes(1)
+    expect(cValidator).toBeCalledTimes(0)
+  })
+  test('object validation - true, without rest', () => {
+    v = v.newCompiler({ allErrors: false })
+    const aValidator = jest.fn(() => true)
+    const bValidator = jest.fn(() => true)
+    const cValidator = jest.fn(() => true)
+    const getInvalidKey = {
+      a: aValidator,
+      b: bValidator,
+      c: cValidator
+    }
+    v(getInvalidKey)({
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4
+    })
+    expect(aValidator).toBeCalledTimes(1)
+    expect(bValidator).toBeCalledTimes(1)
+    expect(cValidator).toBeCalledTimes(1)
   })
 })
