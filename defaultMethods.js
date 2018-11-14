@@ -263,11 +263,16 @@ module.exports = () => ({
     if (isnt(objConfig)('object')) {
       throw new TypeError('Wrong object config')
     }
+
+    const restValidator = objConfig[REST_PROPS]
+      ? this(objConfig[REST_PROPS])
+      : null
     return (obj, ...parents) => {
       if (isnt(obj)('object')) {
         return obj
       }
-      if (!omitUnchecked) {
+
+      if (!omitUnchecked || restValidator) {
         const newObj = { ...obj }
         for (const [key, innerConfig] of Object.entries(objConfig)) {
           const isValidProp = this(innerConfig)
@@ -275,6 +280,18 @@ module.exports = () => ({
             delete newObj[key]
           }
         }
+
+        if (!restValidator) return newObj
+
+        const checkedProps = new Set(Object.keys(objConfig))
+        const notCheckedProps = Object.entries(newObj).filter(([propName]) => !checkedProps.has(propName))
+
+        for (const [key, value] of notCheckedProps) {
+          if (!restValidator(value, new ParentKey(obj, key), ...parents)) {
+            delete newObj[key]
+          }
+        }
+
         return newObj
       }
       return Object.entries(objConfig)

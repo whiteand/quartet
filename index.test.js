@@ -781,6 +781,9 @@ describe('omitInvalidProps', () => {
     expect(
       v.omitInvalidProps({ a: 'number' }, { omitUnchecked2: 1 })({ a: 1, b: 1 })
     ).toEqual({ a: 1 })
+    expect(
+      v.omitInvalidProps({ a: 'number', ...v.rest('string') }, { omitUnchecked: true })({ a: 1, b: '1' })
+    ).toEqual({ a: 1, b: '1' })
   })
   test('omitInvalidProps', () => {
     const obj = {
