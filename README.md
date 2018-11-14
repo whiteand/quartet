@@ -1,6 +1,7 @@
 [![npm version](https://badge.fury.io/js/quartet.svg)](https://badge.fury.io/js/quartet)
 ![npm](https://img.shields.io/npm/dw/quartet.svg)
 [![Build Status](https://travis-ci.org/whiteand/quartet.svg?branch=master)](https://travis-ci.org/whiteand/quartet)
+[![DeepScan grade](https://deepscan.io/api/teams/2512/projects/3631/branches/32004/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=2512&pid=3631&bid=32004)
 [![Known Vulnerabilities](https://snyk.io/test/github/whiteand/quartet/badge.svg?targetFile=package.json)](https://snyk.io/test/github/whiteand/quartet?targetFile=package.json)
 <a href='https://coveralls.io/github/whiteand/quartet?branch=master'><img src='https://coveralls.io/repos/github/whiteand/quartet/badge.svg?branch=master' alt='Coverage Status' /></a>
 
