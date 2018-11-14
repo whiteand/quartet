@@ -79,16 +79,16 @@ const EXPLANATION = {
   // explanation also can be a function that get actual value (and even more...)
   EMAIL: email => ({ code: 'email', oldValue: email }) 
 }
-// v.explain takes schema and explanation
-const explanationSchema = v.explain({
-  username: v.explain(schema.username, EXPLANATION.USER_NAME),  
-  password: v.explain(schema.password, EXPLANATION.PASSWORD), 
-  access_token: v.explain(schema.access_token, EXPLANATION.ACCESS_TOKEN), 
-  birthyear: v.explain(schema.birthyear, EXPLANATION.BIRTH_YEAR), 
-  email: v.explain(schema.email, EXPLANATION.EMAIL)
+// v takes second parameter - explanation of error
+const explanationSchema = v({
+  username: v(schema.username, EXPLANATION.USER_NAME),  
+  password: v(schema.password, EXPLANATION.PASSWORD), 
+  access_token: v(schema.access_token, EXPLANATION.ACCESS_TOKEN), 
+  birthyear: v(schema.birthyear, EXPLANATION.BIRTH_YEAR), 
+  email: v(schema.email, EXPLANATION.EMAIL)
 }, EXPLANATION.NOT_A_VALID_OBJECT)
 ```
-**explain** returns new schema that changes v.explanation
+
 ```javascript
 const isValidWithExplanation = v(explanationSchema)
 v.resetExplanation() // or just v()
@@ -639,7 +639,7 @@ v(/^abc/)('  abcd') // => false
 ---
 
 ### `v.explain :: (config: Config, explanation: any|function) => Validator`
-Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array.
+Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
 
 ```javascript
 v.resetExplanation()
@@ -653,6 +653,8 @@ v.explanation // => [NULL]
 v.resetExplanation()
 v.explanation // => []
 ```
+
+This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(config, explanation)` if explanation is not undefined.
 
 ---
 
@@ -723,7 +725,7 @@ Returns `value` if it's valid. Returns `defaultValue` otherwise.
 
 ---
 
-### `v.newContext :: (registered: object<name, Config>) => quartet instance`
+### `v.newCompiler :: (settings: { registered: Object<name, config>, allErrors: boolean }) => quartet instance`
 Returns new instance of validator generator with custom aliases
 
 ---
@@ -803,7 +805,7 @@ const EXPLANATION = {
   BIRTH_YEAR: 'birth_year',
   EMAIL: 'email'
 }
-// v.explain takes schema and explanation
+
 const explanationSchema = {
     username: [
       // if it's false, next validator will be run
