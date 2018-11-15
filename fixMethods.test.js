@@ -102,4 +102,98 @@ describe('fix method', () => {
     expect(v.hasFixes()).toBe(true)
     expect(v.fix(obj)).toEqual({ a: [] })
   })
+  test('default and filter and addFix together', () => {
+    const obj = {
+      arr: [1, 2, 3, '4', '5', '6'],
+      arr2: [1, 2, 3, '4', '5', '6'],
+      arr3: [1, 2, 3, '4', '5', '6'],
+      arr4: [1, 2, 3, '4', '5', '6']
+    }
+    const replaceWithNumber = (v, { key, parent }) => {
+      parent[key] = Number(v)
+    }
+    const schema = {
+      arr: v.arrayOf(v.filter('number')),
+      arr2: v.arrayOf(v.default(v.default('number', 1), 0)),
+      arr3: v.arrayOf(v.addFix('number', replaceWithNumber)),
+      arr4: v.and(v.default('array', []), v.default(v.arrayOf('number'), [1]))
+    }
+    v()(schema)(obj)
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix(obj)).toEqual({
+      arr: [1,2,3],
+      arr2: [1, 2, 3, 0, 0, 0],
+      arr3: [1,2,3,4,5,6],
+      arr4: [1]
+    })
+  })
+  test('mixed', () => {
+    const isValid = v()({
+      a: v.default('number', 1),
+      b: v.default('number', 2)
+    })
+    expect(v.hasFixes()).toBe(false)
+    isValid({
+      a: 1,
+      b: 'not valid'
+    })
+    expect(v.hasFixes()).toBe(true)
+    isValid({
+      a: 'not valid',
+      b: 2
+    })
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix({
+      a: 'not valid',
+      b: 2
+    })).toEqual({
+      a: 1,
+      b: 2
+    })
+  })
+  test('mixed', () => {
+    const isValid = v()({
+      a: v.default(v.arrayOf('number'), []),
+    })
+    expect(v.hasFixes()).toBe(false)
+    isValid({
+      a: [1, 2, '4', 3]
+    })
+    expect(v.hasFixes()).toBe(true)
+    v(v.arrayOf(v.default('number', 0)))({
+      a: [1, 2, '4', 3]
+    })
+    const { FIX_TREE } = require('./symbols')
+    const { VALUE_KEY, NODE_TYPES, appendTree } = require('./fixTree')
+    
+    expect(v[FIX_TREE]).toEqual({
+      type: NODE_TYPES.EMPTY,
+      fix: null,
+      children: {
+        [VALUE_KEY]: {
+          type: NODE_TYPES.EMPTY,
+          fix: null,
+          children: {
+            a: {
+              type: NODE_TYPES.DEFAULT,
+              fix: { defaultValue: [] },
+              children: {}
+            }
+          }
+        }
+      }
+    })
+    expect(appendTree([VALUE_KEY, 'a', 3], NODE_TYPES.DEFAULT, { defaultValue: 12 }, v[FIX_TREE])).toEqual(v[FIX_TREE])
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix({
+      a: [1, 2, '4', 3]
+    })).toEqual({
+      a: []
+    })
+  })
+  test('default function', () => {
+    v().default('number', str => str + '!')('123')
+    expect(v.fix('123')).toBe('123!')
+    expect(v.fix('1')).toBe('123!')
+  })
 })

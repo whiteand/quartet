@@ -858,6 +858,9 @@ describe('omitInvalidProps', () => {
     expect(onlyPrimes(obj)).toEqual({ b: 2, c: 3, e: 5, g: 7 })
     expect(onlyPrimes(obj) === obj).toBe(false)
   })
+  test('omitInvalidProps delete invalid rest params', () => {
+    expect(v.omitInvalidProps({ ...v.rest('string') })({ a: 1, b: 2, c: 3 })).toEqual({})
+  })
 })
 test('validOr method', () => {
   expect(v.validOr('number', 0)(123)).toBe(123)

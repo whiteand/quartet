@@ -70,6 +70,7 @@ module.exports = () => ({
       const explanation = is(getExplanation)('function')
         ? getExplanation(obj, ...parents)
         : getExplanation
+
       this.explanation.push(explanation)
       f.explanation.push(explanation)
       return false
