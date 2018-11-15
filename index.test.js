@@ -18,6 +18,8 @@ expect.extend({
   }
 })
 const quartet = require('./index')
+const { ADDITIONAL_INFO } = require('./symbols')
+const { filter } = require('./fixTypes')
 let v = quartet()
 
 const testValidator = ({
@@ -1078,29 +1080,66 @@ describe('not all errors', () => {
   })
 })
 
-describe('withoutAdditionalProps', () => {	
-  test('wrong input', () => {	
-    const wrongConfigs = [1, false, null, undefined, 'wrong object validator']	
-    for (const wrongConfig of wrongConfigs) {	
-      expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('Config must be an object config'))	
-    }	
-  })	
-  testValidator({	
-    caption: 'object input',	
-    isValid: v.withoutAdditionalProps({	
-      a: 'number'	
-    }),	
-    trueValues: [{ a: 1 }, { a: 0 }],	
-    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],	
-    validatorName: `v.withoutAdditionalProps({ a: 'number' })`	
-  })	
-  testValidator({	
-    caption: 'string input',	
-    isValid: v.register({ obj: {	
-      a: 'number'	
-    } }).withoutAdditionalProps('obj'),	
-    trueValues: [{ a: 1 }, { a: 0 }],	
-    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],	
-    validatorName: `v.withoutAdditionalProps({ a: 'number' })`	
-  })	
+describe('withoutAdditionalProps', () => {
+  test('wrong input', () => {
+    const wrongConfigs = [1, false, null, undefined, 'wrong object validator']
+    for (const wrongConfig of wrongConfigs) {
+      expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('Config must be an object config'))
+    }
+  })
+  testValidator({
+    caption: 'object input',
+    isValid: v.withoutAdditionalProps({
+      a: 'number'
+    }),
+    trueValues: [{ a: 1 }, { a: 0 }],
+    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
+    validatorName: `v.withoutAdditionalProps({ a: 'number' })`
+  })
+  testValidator({
+    caption: 'string input',
+    isValid: v.register({ obj: {
+      a: 'number'
+    } }).withoutAdditionalProps('obj'),
+    trueValues: [{ a: 1 }, { a: 0 }],
+    falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
+    validatorName: `v.withoutAdditionalProps({ a: 'number' })`
+  })
+})
+
+describe('fix method', () => {
+  test('text empty fixReducers, must deep clone', () => {
+    const a = { a: [{ b: 1 }] }
+    v.resetExplanation()
+    const fixedA = v.fix(a)
+    expect(a !== fixedA).toBe(true)
+    expect(a.a !== fixedA.a).toBe(true)
+    expect(a.a[0] !== fixedA.a[0]).toBe(true)
+    expect(a.a[0].b === fixedA.a[0].b).toBe(true)
+    expect(a).toEqual(fixedA)
+  })
+  test('text empty fixReducers, must deep clone - even recursive', () => {
+    const a = { a: [{ b: 1 }] }
+    a.self = a
+    v.resetExplanation()
+    const fixedA = v.fix(a)
+    expect(a !== fixedA).toBe(true)
+    expect(a.a !== fixedA.a).toBe(true)
+    expect(a.a[0] !== fixedA.a[0]).toBe(true)
+    expect(a.a[0].b === fixedA.a[0].b).toBe(true)
+    expect(fixedA.self === fixedA).toBe(true)
+    expect(a.self !== fixedA).toBe(true)
+    expect(a.self !== fixedA.self).toBe(true)
+    expect(a !== fixedA.self).toBe(true)
+    expect(a).toEqual(fixedA)
+  })
+  test('default fixReducers', () => {
+    v.resetExplanation()
+    const a = { a: 1 }
+    const aSchema = { a: v.default('string', '') }
+    const isValidA = v(aSchema)
+    expect(a).toBeFalseValueOf(isValidA)
+    expect(v.fix(a)).toEqual({ a: '' })
+    expect(a).toEqual({ a: 1 })
+  })
 })

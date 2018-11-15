@@ -1,7 +1,9 @@
 const validate = require('./validate')
 const { is, getType, isnt } = validate
-const { REST_PROPS } = require('./symbols')
+const { REST_PROPS, FIX_TREE } = require('./symbols')
 const ParentKey = require('./ParentKey.js')
+const clone = require('./clone')
+const { fixByTree, appendTree, NODE_TYPES } = require('./fixTree')
 
 const requiredValidator = (_, parentAndKey) => {
   if (!parentAndKey) {
@@ -9,6 +11,7 @@ const requiredValidator = (_, parentAndKey) => {
   }
   return Object.prototype.hasOwnProperty.call(parentAndKey.parent, parentAndKey.key)
 }
+
 module.exports = () => ({
   register (additionalRegistered) {
     if (isnt(additionalRegistered)('object')) {
@@ -333,5 +336,30 @@ module.exports = () => ({
       throw new TypeError('Config must be an object config')
     }
     return this({ ...config, ...this.rest(() => false) })
+  },
+  fix (value) {
+    const initialValue = clone(value)
+    return fixByTree(this[FIX_TREE], initialValue)
+  },
+  default (config, defaultValue) {
+    validate.config(config)
+
+    const isValid = this(config)
+    return (value, ...parents) => {
+      if (isValid(value, ...parents)) {
+        return true
+      }
+
+      const keys = parents.map(e => e.key).reverse()
+
+      const actualDefaultValue = is(defaultValue)('function')
+        ? defaultValue(value, ...parents)
+        : defaultValue
+
+      this[FIX_TREE] = appendTree(keys, NODE_TYPES.DEFAULT, {
+        defaultValue: actualDefaultValue
+      }, this[FIX_TREE])
+      return false
+    }
   }
 })

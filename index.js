@@ -4,7 +4,8 @@ const getDefaultRegisteredConfigs = require('./defaultConfigs')
 const getDefaultMethods = require('./defaultMethods')
 const ParentKey = require('./ParentKey')
 
-const { REST_PROPS } = require('./symbols')
+const { REST_PROPS, FIX_TREE } = require('./symbols')
+const { fixTree } = require('./fixTree')
 
 const compileFunction = (f, ctx) => {
   const bindedF = f.bind(ctx)
@@ -102,12 +103,15 @@ function newCompiler (settings) {
     settings = { ..._default, ...settings }
   }
   let context
-  context = function (config) {
+  context = function (config, explanation) {
     if (config === undefined) {
       return context.resetExplanation()
     }
-    validate.recursive(config, 'config must be not recursive data structure')
-    return compile(config, context)
+    if (explanation === undefined) {
+      validate.recursive(config, 'config must be not recursive data structure')
+      return compile(config, context)
+    }
+    return context.explain(config, explanation)
   }
   for (const [key, value] of Object.entries(settings)) {
     context[key] = is(value)('function')
@@ -117,6 +121,7 @@ function newCompiler (settings) {
   context.newCompiler = newCompiler
   context.resetExplanation = () => {
     context.explanation = []
+    context[FIX_TREE] = fixTree()
     return context
   }
   context.resetExplanation()
