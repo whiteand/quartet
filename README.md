@@ -22,7 +22,7 @@ Library for validations: beautiful and convenient
   - [Registered validations](#registered-validations)
 - [Default registered validators](#default-registered-validators)
 - [Methods](#methods)
-- [Fix Methods] (#fix-methods)
+- [Fix Methods](#fix-methods)
 - [Tips and Tricks](#tips-and-tricks)
 #  Example
 
