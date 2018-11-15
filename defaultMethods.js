@@ -3,7 +3,7 @@ const { is, getType, isnt } = validate
 const { REST_PROPS, FIX_TREE } = require('./symbols')
 const ParentKey = require('./ParentKey.js')
 const clone = require('./clone')
-const { fixByTree, appendTree, NODE_TYPES } = require('./fixTree')
+const { fixByTree, appendTree, NODE_TYPES, VALUE_KEY, isEmptyTree } = require('./fixTree')
 
 const requiredValidator = (_, parentAndKey) => {
   if (!parentAndKey) {
@@ -350,7 +350,7 @@ module.exports = () => ({
         return true
       }
 
-      const keys = parents.map(e => e.key).reverse()
+      const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
 
       const actualDefaultValue = is(defaultValue)('function')
         ? defaultValue(value, ...parents)
@@ -361,5 +361,44 @@ module.exports = () => ({
       }, this[FIX_TREE])
       return false
     }
+  },
+  addFix (config, fixFunction) {
+    validate.config(config)
+    this.throwError('function', 'fixFunction must be a function')(fixFunction)
+
+    const isValid = this(config)
+    return (value, ...parents) => {
+      if (isValid(value, ...parents)) {
+        return true
+      }
+
+      const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
+
+      this[FIX_TREE] = appendTree(keys, NODE_TYPES.FUNCTION, {
+        fixFunction
+      }, this[FIX_TREE])
+
+      return false
+    }
+  },
+  filter (config) {
+    validate.config(config)
+    const isValid = this(config)
+    return (value, ...parents) => {
+      if (isValid(value, ...parents)) {
+        return true
+      }
+
+      const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
+
+      this[FIX_TREE] = appendTree(keys.slice(0, -1), NODE_TYPES.FILTER, {
+        key: keys[keys.length - 1]
+      }, this[FIX_TREE])
+
+      return false
+    }
+  },
+  hasFixes () {
+    return !isEmptyTree(this[FIX_TREE])
   }
 })

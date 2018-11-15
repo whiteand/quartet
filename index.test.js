@@ -1,5 +1,8 @@
 /* global test, jest, expect, describe */
+const quartet = require('./index')
+let v = quartet()
 global.console.log = jest.fn()
+
 expect.extend({
   toBeTrueValueOf (received, isValid, validatorName) {
     const pass = isValid(received) === true
@@ -17,10 +20,6 @@ expect.extend({
     return { pass, message }
   }
 })
-const quartet = require('./index')
-const { ADDITIONAL_INFO } = require('./symbols')
-const { filter } = require('./fixTypes')
-let v = quartet()
 
 const testValidator = ({
   caption,
@@ -635,6 +634,27 @@ describe('explain', () => {
     isValidPerson({})
     expect(v.explanation).toEqual(['wrong name', 'wrong age'])
   })
+  test('custom explanation - not function with alias v(config, explanation)', () => {
+    v.resetExplanation()
+    const isValidPerson = v({
+      name: v('string', 'wrong name'),
+      age: v('number', 'wrong age')
+    })
+    isValidPerson({
+      name: 'andrew'
+    })
+    expect(v.explanation).toEqual(['wrong age'])
+
+    v()
+    isValidPerson({
+      age: 12
+    })
+    expect(v.explanation).toEqual(['wrong name'])
+
+    v()
+    isValidPerson({})
+    expect(v.explanation).toEqual(['wrong name', 'wrong age'])
+  })
   test('custom explanation - function', () => {
     v()
     const explanationFunc = type => (value, { key }) =>
@@ -1104,42 +1124,5 @@ describe('withoutAdditionalProps', () => {
     trueValues: [{ a: 1 }, { a: 0 }],
     falseValues: [{ a: 1, b: 3 }, { a: '0' }, null],
     validatorName: `v.withoutAdditionalProps({ a: 'number' })`
-  })
-})
-
-describe('fix method', () => {
-  test('text empty fixReducers, must deep clone', () => {
-    const a = { a: [{ b: 1 }] }
-    v.resetExplanation()
-    const fixedA = v.fix(a)
-    expect(a !== fixedA).toBe(true)
-    expect(a.a !== fixedA.a).toBe(true)
-    expect(a.a[0] !== fixedA.a[0]).toBe(true)
-    expect(a.a[0].b === fixedA.a[0].b).toBe(true)
-    expect(a).toEqual(fixedA)
-  })
-  test('text empty fixReducers, must deep clone - even recursive', () => {
-    const a = { a: [{ b: 1 }] }
-    a.self = a
-    v.resetExplanation()
-    const fixedA = v.fix(a)
-    expect(a !== fixedA).toBe(true)
-    expect(a.a !== fixedA.a).toBe(true)
-    expect(a.a[0] !== fixedA.a[0]).toBe(true)
-    expect(a.a[0].b === fixedA.a[0].b).toBe(true)
-    expect(fixedA.self === fixedA).toBe(true)
-    expect(a.self !== fixedA).toBe(true)
-    expect(a.self !== fixedA.self).toBe(true)
-    expect(a !== fixedA.self).toBe(true)
-    expect(a).toEqual(fixedA)
-  })
-  test('default fixReducers', () => {
-    v.resetExplanation()
-    const a = { a: 1 }
-    const aSchema = { a: v.default('string', '') }
-    const isValidA = v(aSchema)
-    expect(a).toBeFalseValueOf(isValidA)
-    expect(v.fix(a)).toEqual({ a: '' })
-    expect(a).toEqual({ a: 1 })
   })
 })
