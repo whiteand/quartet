@@ -817,7 +817,7 @@ Fix methods takes validators and returns validator with side-effect of recording
   }), {})
   const obj = { child: 1 }
   isObjectValid(obj)
-  v.fix(obj) // => obj
+  v.fix(obj) // => {}
 ```
 
 ## `v.fix :: (value: any) => any`
