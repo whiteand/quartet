@@ -22,6 +22,7 @@ Library for validations: beautiful and convenient
   - [Registered validations](#registered-validations)
 - [Default registered validators](#default-registered-validators)
 - [Methods](#methods)
+- [Fix Methods] (#fix-methods)
 - [Tips and Tricks](#tips-and-tricks)
 #  Example
 
@@ -66,7 +67,7 @@ isValidObj({
 }) // => false
 ```
 
-If we need explanation, then we must use explanation schema.
+If we need explanation, then we must use explanation validators (with second parameter of v).
 
 ```javascript
 const EXPLANATION = {
@@ -87,9 +88,7 @@ const explanationSchema = v({
   birthyear: v(schema.birthyear, EXPLANATION.BIRTH_YEAR), 
   email: v(schema.email, EXPLANATION.EMAIL)
 }, EXPLANATION.NOT_A_VALID_OBJECT)
-```
 
-```javascript
 const isValidWithExplanation = v(explanationSchema)
 v.resetExplanation() // or just v()
 const isValid = isValidWithExplanation({
@@ -105,19 +104,63 @@ const isValid = isValidWithExplanation({
 
 // all explanations will be saved into v.explanation
 const errors = v.explanation // errors = ['username', 'access_token', { code: 'email', value: '213'}]
+console.log(v.explanation.filter(v('string')).join(', ') + ' are not valid') // => 'username, access_token are not valid'
+```
 
-const defaultValues = {
-  username: 'unknown',
-  password: 'qwerty123456',
-  access_token: 0, // wrong
-  birthyear: 2000,
-  email: 'test@mail.com'
-}
-
-const validProps = v.omitInvalidProps(schema)(obj)
-const withDefaultValues = { ...defaultValues, ...validProps }
+If we want to set default values we can use fix methods (filter, default, addFix, ...):
 
 ```
+const schema = {
+  username: v.default(
+    v.and('string', v.min(3), v.max(30)),
+    'unknown'
+  ), 
+  password: v.filter(
+    v.and('string', v.regex(/^[a-zA-Z0-9]{3,30}$/))
+  ), // removes password field if it's invalid
+  access_token: v.filter(['string', 'number']),
+  birthyear: v.default(
+    v.and('safe-integer', v.min(1900), v.max(2013)), 
+    1996
+  ),
+  emails: v.and(
+    v.default('array', []),
+    v.arrayOf(
+      v.filter( // removes element if invalid
+        v.and('string', v.regex(emailRegex))
+      )
+    )
+  )
+}
+const obj = {
+  // wrong
+  username: 'an', 
+  password: '123456qQ',
+  // wrong
+  access_token: null, 
+  // wrong
+  birthyear: '213',
+  // wrong
+  email: ['wrong email', 'andrewbeletskiy@gmail.com', 'wrong email]
+}
+v.resetExplanation()
+v(schema)(obj) // => false
+v.fix(obj)
+/*
+  => {
+    username: 'unknown',
+    password: '123456qQ',
+    brithyear: 1996,
+    emails: ['andrewbeletskiy@gmail.com']
+  } // it's returns new fixed value
+*/
+v.resetExplanation()
+obj.emails = null
+v(schema)(obj)
+v.fix(obj) // => { username: 'unknown', password: '123456qQ', brithyear: 1996, emails: [] }
+```
+
+Validators, object validators, variant validators, explanation validators and fix-validators are all can be composed into larger validator.
 
 # Install
 
@@ -760,6 +803,95 @@ Returns true only if passed value is object and has valid props and has not any 
   onlyANumber({ a: 1 }) // => true
   onlyANumber({ a: '1' }) // => false
   onlyANumber({ a: 1, b: 2 }) // => false
+```
+
+# Fix Methods
+
+Fix methods takes validators and returns validator with side-effect of recording how to fix invalidation. And after validation we can use method `v.fix(invalidValue) => validValue` to fix errors.
+
+### Warning: if there is fix of child and fix of parent - only parent fix will be applied:
+
+```javascript
+  const isObjectValid = v(v.default({
+    child: v.default('string', '')
+  }), {})
+  const obj = { child: 1 }
+  isObjectValid(obj)
+  v.fix(obj) // => obj
+```
+
+## `v.fix :: (value: any) => any`
+
+It gets all fixes added by fix methods and applies it on `value`. Returns new value with all fixes applied. It's pure function.
+
+
+There three main fix methods: filter, default, addFix.
+
+## `v.filter :: (config) => Validator`
+
+Takes validator and returns new validator with side effect: if value is invalid - it will be removed with using `v.fix` from parent (object or array)
+
+```javascript
+ const obj = {
+   arr: [1,2,'3',4,5]
+   obj: {
+     a: 1, // must be removed
+     b: 2, // not removed
+     c: '3', // must be removed
+     d: 'string' // not removed
+   }
+ }
+ v.resetExlanation()({
+  arr: v.arrayOf(v.filter('number')),
+  obj: {
+    a: v.filter('string'),
+    d: v.filter('string')
+    ...v.rest(v.filter('number'))
+  }
+ })(obj) // => false
+ console.log(v.hasFixes()) // => true
+ console.log(v.fix(obj)) // => { arr: [1,2,4,5], obj: { b: 2, d: 'string' } }
+```
+
+## `v.default :: (config, defaultValue) => Validator`
+
+Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
+
+```javascript
+ const obj = {
+   arr: [1,2,'3',4,5]
+   obj: {
+     a: 1, // must be removed
+     b: 2, // not removed
+     c: '3', // must be removed
+     d: 'string' // not removed
+   }
+ }
+ v.resetExlanation()({
+  arr: v.arrayOf(v.default('number', 0)),
+  obj: {
+    a: v.default('string', ''),
+    ...v.rest(v.default('number'))
+    d: v.default('number', 0)
+  }
+ })(obj) // => false
+ console.log(v.hasFixes()) // => true
+ console.log(v.fix(obj)) // => { arr: [1,2,0,4,5], obj: { a: '', b: 2, c: 0, d: 'string' } }
+```
+
+## `v.addFix :: (config, fixFunction) => Validator`
+
+Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
+
+```javascript
+ const arr = [1,2,'3',4,5]
+ v.resetExlanation()
+ const toNumber = (v, { key, parent }) => { // changes value to number
+   parent[key] = Number(v) // we need to change by parent reference in order to mutate fix result
+ }
+ v(v.arrayOf(v.addFix('number', toNumber))(obj) // => false
+ console.log(v.hasFixes()) // => true
+ console.log(v.fix(obj)) // => [1,2,3,4,5]
 ```
 
 # Tips and Tricks
