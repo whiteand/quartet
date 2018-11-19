@@ -109,7 +109,7 @@ console.log(v.explanation.filter(v('string')).join(', ') + ' are not valid') // 
 
 If we want to set default values we can use fix methods (filter, default, addFix, ...):
 
-```
+```javascript
 const schema = {
   username: v.default(
     v.and('string', v.min(3), v.max(30)),
