@@ -121,9 +121,9 @@ describe('fix method', () => {
     v()(schema)(obj)
     expect(v.hasFixes()).toBe(true)
     expect(v.fix(obj)).toEqual({
-      arr: [1,2,3],
+      arr: [1, 2, 3],
       arr2: [1, 2, 3, 0, 0, 0],
-      arr3: [1,2,3,4,5,6],
+      arr3: [1, 2, 3, 4, 5, 6],
       arr4: [1]
     })
   })
@@ -153,7 +153,7 @@ describe('fix method', () => {
   })
   test('mixed', () => {
     const isValid = v()({
-      a: v.default(v.arrayOf('number'), []),
+      a: v.default(v.arrayOf('number'), [])
     })
     expect(v.hasFixes()).toBe(false)
     isValid({
@@ -165,7 +165,7 @@ describe('fix method', () => {
     })
     const { FIX_TREE } = require('./symbols')
     const { VALUE_KEY, NODE_TYPES, appendTree } = require('./fixTree')
-    
+
     expect(v[FIX_TREE]).toEqual({
       type: NODE_TYPES.EMPTY,
       fix: null,

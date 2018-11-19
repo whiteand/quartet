@@ -14,11 +14,11 @@ const isnt = function isValueHasNotAnyOfTheseTypes (value) {
   return (...types) => !types.includes(getType(value))
 }
 
-const validateConfig = function isConfigHasValidType (config) {
-  if (isnt(config)('string', 'array', 'function', 'object', 'symbol')) {
-    throw new TypeError('config must be string|symbol|array|function|object. JSON: ' + JSON.stringify(config))
+const validateSchema = function isSchemaHasValidType (schema) {
+  if (isnt(schema)('string', 'array', 'function', 'object', 'symbol')) {
+    throw new TypeError('schema must be string|symbol|array|function|object. JSON: ' + JSON.stringify(schema))
   }
-  return config
+  return schema
 }
 
 const validateRecursivity = (obj, errorMessage, history = []) => {
@@ -41,6 +41,6 @@ module.exports = {
   getType,
   is,
   isnt,
-  config: validateConfig,
+  schema: validateSchema,
   recursive: validateRecursivity
 }

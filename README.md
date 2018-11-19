@@ -251,7 +251,7 @@ Let's use `quartet`! (and maybe it will be easier to read and write?)
 
 ```javascript
 const isNumber = n => typeof n === "number";
-const isObjectValidConfig = {
+const isObjectValidSchema = {
   theNumber: isNumber,
   theString: s => typeof s === "string",
   theArray: arr => Array.isArray(arr) && arr.every(isNumber),
@@ -262,11 +262,11 @@ const isObjectValidConfig = {
     innerProp: isNumber
   }
 };
-const isObjectValid = v(isObjectValidConfig);
+const isObjectValid = v(isObjectValidSchema);
 const isValid = isObjectValid(obj);
 ```
 
-As you can see `quartet` also can takes an object as a config. All values passed to resulting validation function must be an object. All properties must be validated using validation predicates.
+As you can see `quartet` also can takes an object as a schema. All values passed to resulting validation function must be an object. All properties must be validated using validation predicates.
 
 But there is some new in this example. Let's look at validation for `theUndefined` property:
 
@@ -289,7 +289,7 @@ function predicate(
 ): Boolean
 ```
 
-Also as you can see: inner values of config - are not only simple predicates. But they can be any valid config for `quartet`. You can see how do we use object config for checking `theObject` property.
+Also as you can see: inner values of schema - are not only simple predicates. But they can be any valid schema for `quartet`. You can see how do we use object schema for checking `theObject` property.
 
 (You can see that code is still not so beautiful as we want. What do we want? Go deeper to see it!)
 
@@ -309,7 +309,7 @@ v = v.register({ // Returns new validator generator with such aliases
   required: (_, { key, parent }) => parent.hasOwnProperty(key)
 })
 
-const isObjectValidConfig = {
+const isObjectValidSchema = {
   theNumber: "number",
   theString: "string",
   theArray: arr => v("array")(arr) && arr.every(v("number")),
@@ -319,7 +319,7 @@ const isObjectValidConfig = {
     innerProp: "number"
   }
 };
-const isValid = v(isObjectValidConfig)(obj);
+const isValid = v(isObjectValidSchema)(obj);
 ```
 
 This is interesting and useful solution, but this is much complicted that it was before, but we can do better! Go deeper!
@@ -337,9 +337,9 @@ It uses a such syntax:
 
 ```javascript
 v([
-    orConfig,
-    orConfig2,
-    orConfig3,
+    orSchema,
+    orSchema2,
+    orSchema3,
     ...
 ])
 ```
@@ -347,11 +347,11 @@ There is *AND-composition*. It combines validations in such way that it returns 
 It uses a such syntax:
 ```javascript
 v.and(
-  andConfig,
-  andConfig2,
-  andConfig3,
-  andConfig4,
-  andConfig5,
+  andSchema,
+  andSchema2,
+  andSchema3,
+  andSchema4,
+  andSchema5,
   ...
 )
 ```
@@ -383,7 +383,7 @@ v = v.register({ // Returns new validator generator with such aliases
   required: (_, { key, parent }) => parent.hasOwnProperty(key)
 })
 
-const isObjectValidConfig = {
+const isObjectValidSchema = {
   theNumberOrString: ["number", "string"],
   theString: "string",
   theArrayOfNumbers: v.arrayOf("number"),
@@ -393,7 +393,7 @@ const isObjectValidConfig = {
     innerProp: "number"
   }
 };
-v(isObjectValidConfig)(obj);
+v(isObjectValidSchema)(obj);
 ```
 
 # Default registered validators
@@ -429,7 +429,7 @@ So you can see that we shouldn't register own validators - if they are present b
 
 ## Types
 ```javascript
-type Config = function|string|object|Array`
+type Schema = function|string|object|Array`
 type Parent = { key: string|number, parent: object|array }
 type Validator = function(
   value: any,
@@ -449,12 +449,12 @@ type FromValidable<T> = function(
 
 ---
 
-### `v.registered :: Object<configName, config: Config>`
-returns object with registered configs
+### `v.registered :: Object<schemaName, schema: Schema>`
+returns object with registered schemas
 
 ---
 
-### `v.register :: (AdditionalConfigs: object<string, Config>) => quartet instance`
+### `v.register :: (AdditionalSchemas: object<string, Schema>) => quartet instance`
 returns new quartet instance with added aliases for validators.
 
 ---
@@ -488,8 +488,8 @@ aRequired({ a: 1 }) // => false
 
 ---
 
-### `v.requiredIf :: (config: Config) => Validator(value, ...parents)`
-if `v(config)(value, ...parents)` returns true, then this field treated as required.
+### `v.requiredIf :: (schema: Schema) => Validator(value, ...parents)`
+if `v(schema)(value, ...parents)` returns true, then this field treated as required.
 
 ```javascript
 const hasParentHasB = (_, { parent }) => parent.hasB
@@ -504,7 +504,7 @@ bObjValidator({ hasB: true }) // => false
 
 ---
 
-### `v.arrayOf :: (config: Config) => (arr: any) => boolean`
+### `v.arrayOf :: (schema: Schema) => (arr: any) => boolean`
 returns true if `arr` is Array and all elements of `arr` are valid
 
 ```javascript
@@ -517,8 +517,8 @@ v.arrayOf(isPrime)([2,3,5,7]) // => true
 
 ---
 
-### v.dictionaryOf :: (config: Config) => (dict: object<key, value>) => boolean`
-returns true if all values stored in `dict` are valid using `config`.
+### v.dictionaryOf :: (schema: Schema) => (dict: object<key, value>) => boolean`
+returns true if all values stored in `dict` are valid using `schema`.
 
 ```javascript
 const isNumberDict = v.dictionaryOf('number')
@@ -535,8 +535,8 @@ const isNumberDict2 = v({ ...v.rest('number') })
 
 ---
 
-### `v.rest :: (config: Config) => object`
-Returns config that can be spreaded into object validation config to check other properties.
+### `v.rest :: (schema: Schema) => object`
+Returns schema that can be spreaded into object validation schema to check other properties.
 
 ```javascript
 const aAndStrings = v({
@@ -558,8 +558,8 @@ aAndString({
 
 ---
 
-### v.keys :: (config: Config) => (dict: object<key, value>) => boolean`
-returns true if all keys used in `dict` are valid using `config`
+### v.keys :: (schema: Schema) => (dict: object<key, value>) => boolean`
+returns true if all keys used in `dict` are valid using `schema`
 
 ```javascript
 const isAbcDict = v.keys(key => ['a', 'b', 'c'].includes(key))
@@ -570,7 +570,7 @@ isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 
 ---
 
-### `v.throwError :: (config: Config, errorMessage: string|FromValidable<string>) => FromValidable<any>`
+### `v.throwError :: (schema: Schema, errorMessage: string|FromValidable<string>) => FromValidable<any>`
 `throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
 
 ```javascript
@@ -681,7 +681,7 @@ v(/^abc/)('  abcd') // => false
 
 ---
 
-### `v.explain :: (config: Config, explanation: any|function) => Validator`
+### `v.explain :: (schema: Schema, explanation: any|function) => Validator`
 Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
 
 ```javascript
@@ -697,17 +697,17 @@ v.resetExplanation()
 v.explanation // => []
 ```
 
-This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(config, explanation)` if explanation is not undefined.
+This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(schema, explanation)` if explanation is not undefined.
 
 ---
 
-### not :: (config: Config) => Validator`
+### not :: (schema: Schema) => Validator`
 Returns opposite validator.
 
 ---
 
 
-### `omitInvalidItems :: (config) => (collection: Array|object<key, value>) => Array|object<key, value>`
+### `omitInvalidItems :: (schema) => (collection: Array|object<key, value>) => Array|object<key, value>`
 
 If `collection` is array, the returs new array without invalid values.
 
@@ -733,7 +733,7 @@ onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
 ---
 
 
-### `v.omitInvalidProps :: (objConfig: object|string, { omitUnchecked: boolean = true }) => object => object`
+### `v.omitInvalidProps :: (objSchema: object|string, { omitUnchecked: boolean = true }) => object => object`
 Removes invalid properties. If keepUnchecked is falsy value, function will keep unchecked properties of object.
 
 ```javascript
@@ -763,12 +763,12 @@ removeInvalidProps({
 
 ---
 
-### `v.validOr :: (config: Config, defaultValue: any) => value => value`
+### `v.validOr :: (schema: Schema, defaultValue: any) => value => value`
 Returns `value` if it's valid. Returns `defaultValue` otherwise.
 
 ---
 
-### `v.newCompiler :: (settings: { registered: Object<name, config>, allErrors: boolean }) => quartet instance`
+### `v.newCompiler :: (settings: { registered: Object<name, schema>, allErrors: boolean }) => quartet instance`
 Returns new instance of validator generator with custom aliases
 
 ---
@@ -778,7 +778,7 @@ Returns validator, that returns true only of value isone of primitiveValues.
 
 ---
 
-### `v.parent :: (config: Config) => Validator`
+### `v.parent :: (schema: Schema) => Validator`
 Checks is parent of the value is valid.
 
 ```javascript
@@ -793,7 +793,7 @@ Checks is parent of the value is valid.
   bObjValidator({ hasB: true }) // => false
 ```
 
-### `v.withoutAdditionalProps :: (config: object|string) => Validator`
+### `v.withoutAdditionalProps :: (schema: object|string) => Validator`
 Returns true only if passed value is object and has valid props and has not any additional properties.
 
 ```javascript
@@ -827,7 +827,7 @@ It gets all fixes added by fix methods and applies it on `value`. Returns new va
 
 There three main fix methods: filter, default, addFix.
 
-## `v.filter :: (config) => Validator`
+## `v.filter :: (schema) => Validator`
 
 Takes validator and returns new validator with side effect: if value is invalid - it will be removed with using `v.fix` from parent (object or array)
 
@@ -853,7 +853,7 @@ Takes validator and returns new validator with side effect: if value is invalid 
  console.log(v.fix(obj)) // => { arr: [1,2,4,5], obj: { b: 2, d: 'string' } }
 ```
 
-## `v.default :: (config, defaultValue) => Validator`
+## `v.default :: (schema, defaultValue) => Validator`
 
 Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
 
@@ -879,7 +879,7 @@ Takes validator and returns new validator with side effect: if value is invalid 
  console.log(v.fix(obj)) // => { arr: [1,2,0,4,5], obj: { a: '', b: 2, c: 0, d: 'string' } }
 ```
 
-## `v.addFix :: (config, fixFunction) => Validator`
+## `v.addFix :: (schema, fixFunction) => Validator`
 
 Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
 
@@ -892,6 +892,47 @@ Takes validator and returns new validator with side effect: if value is invalid 
  v(v.arrayOf(v.addFix('number', toNumber))(obj) // => false
  console.log(v.hasFixes()) // => true
  console.log(v.fix(obj)) // => [1,2,3,4,5]
+```
+
+## `v.fromConfig :: (config: Config) => Validator`
+
+```javascript
+@typedef Config {{
+  validator: Schema, 
+  explanation: any|function(): any // not required
+  // one of the next fix params
+  default: any,
+  filter: any,
+  fix: function(invalidValue, { key, parent}, ...): void // mutate parent to fix error
+}}
+```
+
+fromConfig is used to set validator, explanation and fix at one config.
+
+Example:
+
+```javascript
+const arr = [1, 2, 3, 4, '5', '6', 7]
+const isElementValid = v.fromConfig({
+  validator: 'number',
+  explanation: (value, { key }) => `${key}th element is not a number: ${JSON.stringify(value)}`,
+  fix: (invalidValue, { key, parent }) => {
+    parent[key] = Number(invalidValue)
+  }
+})
+
+const isArrValid = v.fromConfig({
+  validator: v.arrayOf(isElementValid),
+  explanation: 'Not valid array'
+})
+
+v()
+
+isArrValid(arr) // => false
+
+console.log(v.hasFixes()) // => true
+console.log(v.explanation) // => [ '4th element is not a number: "5"','5th element is not a number: "6"', 'Not valid array' ]
+console.log(v.fix(arr)) // => [ 1, 2, 3, 4, 5, 6, 7 ]
 ```
 
 # Tips and Tricks
@@ -976,6 +1017,3 @@ v(explanationSchema)({
 
 // explanation was changed by side effect of last functions
 console.log(explanation) // => ['username', 'access_token', 'email']
-```
-
-

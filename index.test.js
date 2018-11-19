@@ -39,13 +39,13 @@ const testValidator = ({
 }
 
 describe('stringCheck function', () => {
-  test('right name of config', () => {
+  test('right name of schema', () => {
     expect(v('number')(1)).toBe(true)
     expect(v('finite')(1)).toBe(true)
   })
-  test('wrong name of config', () => {
+  test('wrong name of schema', () => {
     expect(() => v('wrong name of validator')(1)).toThrowError(
-      new TypeError(`'wrong name of validator' is not a registered config`)
+      new TypeError(`'wrong name of validator' is not a registered schema`)
     )
   })
 })
@@ -142,7 +142,7 @@ describe('combinators', () => {
     expect(v([v.and()])('value')).toBe(true)
   })
 })
-describe('validate config', () => {})
+describe('validate schema', () => {})
 // DEFAULT VALIDATORS
 testValidator({
   caption: 'string default validator',
@@ -316,8 +316,8 @@ testValidator({
 })
 
 testValidator({
-  caption: 'isValidConfig method',
-  isValid: v.isValidConfig,
+  caption: 'isValidSchema method',
+  isValid: v.isValidSchema,
   trueValues: [{}, 'number', [['string']], [], { a: 'number' }, () => true],
   falseValues: [
     null,
@@ -331,30 +331,30 @@ testValidator({
       return obj
     })()
   ],
-  validatorName: `v.isValidConfig`
+  validatorName: `v.isValidSchema`
 })
 
-describe('validateConfig', () => {
+describe('validateSchema', () => {
   test('recursive', () => {
     const recursiveObj = { a: 'number' }
     recursiveObj.b = { c: { d: recursiveObj } }
     expect(() => {
-      v.validateConfig(recursiveObj)
-    }).toThrowError(new TypeError('Config must be not recursive'))
+      v.validateSchema(recursiveObj)
+    }).toThrowError(new TypeError('Schema must be not recursive'))
   })
   test('not valid type', () => {
-    const config = null
+    const schema = null
     expect(() => {
-      v.validateConfig(config)
+      v.validateSchema(schema)
     }).toThrowError(
       new TypeError(
-        'config must be string|symbol|array|function|object'
+        'schema must be string|symbol|array|function|object'
       )
     )
   })
-  test('returns config if valid', () => {
-    const config = { ...v.rest('number') }
-    expect(v.validateConfig(config)).toBe(config)
+  test('returns schema if valid', () => {
+    const schema = { ...v.rest('number') }
+    expect(v.validateSchema(schema)).toBe(schema)
   })
 })
 
@@ -466,7 +466,7 @@ test('requiredIf method: boolean argument', () => {
 })
 
 testValidator({
-  caption: 'requiredIf method: config argument',
+  caption: 'requiredIf method: schema argument',
   isValid: v({
     hasB: 'boolean',
     b: v.requiredIf((_, { parent }) => parent.hasB)
@@ -634,7 +634,7 @@ describe('explain', () => {
     isValidPerson({})
     expect(v.explanation).toEqual(['wrong name', 'wrong age'])
   })
-  test('custom explanation - not function with alias v(config, explanation)', () => {
+  test('custom explanation - not function with alias v(schema, explanation)', () => {
     v.resetExplanation()
     const isValidPerson = v({
       name: v('string', 'wrong name'),
@@ -776,10 +776,10 @@ describe('Test omitInvalidItems', () => {
 describe('omitInvalidProps', () => {
   test('omitInvalidProps wrong settings', () => {
     expect(() => v.omitInvalidProps()).toThrowError(
-      new TypeError('Wrong object config')
+      new TypeError('Wrong object schema')
     )
     expect(() => v.omitInvalidProps('wrong')).toThrowError(
-      new TypeError('Wrong object config')
+      new TypeError('Wrong object schema')
     )
     expect(() => v.omitInvalidProps('wrong', null)).toThrowError(
       new TypeError('settings must be object')
@@ -907,7 +907,7 @@ describe('register method', () => {
   test('invalid path', () => {
     expect(() => {
       v.register({ value: '1' })
-    }).toThrowError(new TypeError('some of registered configs is invalid'))
+    }).toThrowError(new TypeError('some of registered schemas is invalid'))
   })
 })
 
@@ -997,7 +997,7 @@ describe('rest props validation', () => {
     expect(() => {
       v.rest(1)
     }).toThrowError(new TypeError(
-      'config must be string|symbol|array|function|object. JSON: 1'
+      'schema must be string|symbol|array|function|object. JSON: 1'
     ))
   })
   const restValidatorSchema = v.rest('string')
@@ -1105,9 +1105,9 @@ describe('not all errors', () => {
 
 describe('withoutAdditionalProps', () => {
   test('wrong input', () => {
-    const wrongConfigs = [1, false, null, undefined, 'wrong object validator']
-    for (const wrongConfig of wrongConfigs) {
-      expect(() => v.withoutAdditionalProps(wrongConfig)).toThrowError(new TypeError('Config must be an object config'))
+    const wrongSchemas = [1, false, null, undefined, 'wrong object validator']
+    for (const wrongSchema of wrongSchemas) {
+      expect(() => v.withoutAdditionalProps(wrongSchema)).toThrowError(new TypeError('Schema must be an object schema'))
     }
   })
   testValidator({

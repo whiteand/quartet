@@ -1,6 +1,6 @@
 const validate = require('./validate')
 const { getType, isnt, is } = validate
-const getDefaultRegisteredConfigs = require('./defaultConfigs')
+const getDefaultRegisteredSchemas = require('./defaultSchemas')
 const getDefaultMethods = require('./defaultMethods')
 const ParentKey = require('./ParentKey')
 
@@ -16,52 +16,52 @@ const compileString = (name, ctx) => {
   const { registered } = ctx
   const isRegistered = registered[name]
   if (!isRegistered) {
-    throw new TypeError(`'${name}' is not a registered config`)
+    throw new TypeError(`'${name}' is not a registered schema`)
   }
   return compile(registered[name], ctx)
 }
 
 const compileOr = (arr, ctx) => {
-  arr.forEach(validate.config)
-  return (value, ...parents) => arr.some(config => compile(config, ctx)(value, ...parents))
+  arr.forEach(validate.schema)
+  return (value, ...parents) => arr.some(schema => compile(schema, ctx)(value, ...parents))
 }
 
-const compileObj = (objConfig, ctx) => {
+const compileObj = (objSchema, ctx) => {
   return (obj, ...parents) => {
     if (!obj) {
       return false
     }
     if (!ctx.allErrors) {
-      for (const [key, innerConfig] of Object.entries(objConfig)) {
+      for (const [key, innerSchema] of Object.entries(objSchema)) {
         const innerValue = obj[key]
-        const isInnerValueValid = compile(innerConfig, ctx)(innerValue, new ParentKey(obj, key), ...parents)
+        const isInnerValueValid = compile(innerSchema, ctx)(innerValue, new ParentKey(obj, key), ...parents)
         if (!isInnerValueValid) return false
       }
 
-      if (is(objConfig[REST_PROPS])('undefined')) return true
+      if (is(objSchema[REST_PROPS])('undefined')) return true
 
-      const checkedPropsSet = new Set(Object.keys(objConfig))
+      const checkedPropsSet = new Set(Object.keys(objSchema))
 
-      const isValidRest = compile(objConfig[REST_PROPS], ctx)
+      const isValidRest = compile(objSchema[REST_PROPS], ctx)
 
       return Object.entries(obj)
         .filter(([prop]) => !checkedPropsSet.has(prop))
         .every(([key, value]) => isValidRest(value, new ParentKey(obj, key), ...parents))
     }
     let objValid = true
-    for (const [key, innerConfig] of Object.entries(objConfig)) {
+    for (const [key, innerSchema] of Object.entries(objSchema)) {
       const innerValue = obj[key]
-      const isInnerValueValid = compile(innerConfig, ctx)(innerValue, new ParentKey(obj, key), ...parents)
+      const isInnerValueValid = compile(innerSchema, ctx)(innerValue, new ParentKey(obj, key), ...parents)
       if (!isInnerValueValid) {
         objValid = false
       }
     }
 
-    if (is(objConfig[REST_PROPS])('undefined')) return objValid
+    if (is(objSchema[REST_PROPS])('undefined')) return objValid
 
-    const checkedPropsSet = new Set(Object.keys(objConfig))
+    const checkedPropsSet = new Set(Object.keys(objSchema))
 
-    const isValidRest = compile(objConfig[REST_PROPS], ctx)
+    const isValidRest = compile(objSchema[REST_PROPS], ctx)
     for (const [key, value] of Object.entries(obj)) {
       if (checkedPropsSet.has(key)) continue
       const isInnerValueValid = isValidRest(value, new ParentKey(obj, key), ...parents)
@@ -81,13 +81,13 @@ const compilers = {
   function: compileFunction
 }
 
-function compile (config, ctx) {
-  validate.config(config)
-  return compilers[getType(config)](config, ctx)
+function compile (schema, ctx) {
+  validate.schema(schema)
+  return compilers[getType(schema)](schema, ctx)
 }
 
 const getDefaultSettings = () => ({
-  registered: getDefaultRegisteredConfigs(),
+  registered: getDefaultRegisteredSchemas(),
   allErrors: true,
   ...getDefaultMethods()
 })
@@ -103,15 +103,15 @@ function newCompiler (settings) {
     settings = { ..._default, ...settings }
   }
   let context
-  context = function (config, explanation) {
-    if (config === undefined) {
+  context = function (schema, explanation) {
+    if (schema === undefined) {
       return context.resetExplanation()
     }
     if (explanation === undefined) {
-      validate.recursive(config, 'config must be not recursive data structure')
-      return compile(config, context)
+      validate.recursive(schema, 'schema must be not recursive data structure')
+      return compile(schema, context)
     }
-    return context.explain(config, explanation)
+    return context.explain(schema, explanation)
   }
   for (const [key, value] of Object.entries(settings)) {
     context[key] = is(value)('function')

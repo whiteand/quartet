@@ -4,6 +4,9 @@ const { REST_PROPS, FIX_TREE } = require('./symbols')
 const ParentKey = require('./ParentKey.js')
 const clone = require('./clone')
 const { fixByTree, appendTree, NODE_TYPES, VALUE_KEY, isEmptyTree } = require('./fixTree')
+const fromConfig = require('./fromConfig.js')
+
+const addExtension = require('./validatorExtension')
 
 const requiredValidator = (_, parentAndKey) => {
   if (!parentAndKey) {
@@ -17,52 +20,52 @@ module.exports = () => ({
     if (isnt(additionalRegistered)('object')) {
       throw new TypeError('additionalRegistered must be an object')
     }
-    if (!Object.values(additionalRegistered).every(config => this.isValidConfig(config))) {
-      throw new TypeError('some of registered configs is invalid')
+    if (!Object.values(additionalRegistered).every(schema => this.isValidSchema(schema))) {
+      throw new TypeError('some of registered schemas is invalid')
     }
     return this.newCompiler({ allErrors: this.allErrors, registered: { ...this.registered, ...additionalRegistered } })
   },
-  isValidConfig (config) {
+  isValidSchema (schema) {
     try {
-      validate.recursive(config, 'array config must be not recursive data structure')
+      validate.recursive(schema, 'array schema must be not recursive data structure')
     } catch (e) {
       return false
     }
-    const t = getType(config)
+    const t = getType(schema)
     switch (t) {
       case 'array':
-        return config.every(innerConfig => this.isValidConfig(innerConfig))
+        return schema.every(innerSchema => this.isValidSchema(innerSchema))
       case 'object': {
-        const isCheckedPropsConfigsValid = Object.keys(config).length === 0 ||
-          Object.values(config).every(innerConfig => this.isValidConfig(innerConfig))
-        const isRestPropsValid = config[REST_PROPS]
-          ? this.isValidConfig(config[REST_PROPS])
+        const isCheckedPropsschemasValid = Object.keys(schema).length === 0 ||
+          Object.values(schema).every(innerSchema => this.isValidSchema(innerSchema))
+        const isRestPropsValid = schema[REST_PROPS]
+          ? this.isValidSchema(schema[REST_PROPS])
           : true
-        return isCheckedPropsConfigsValid && isRestPropsValid
+        return isCheckedPropsschemasValid && isRestPropsValid
       }
       case 'function': return true
-      case 'string': return this.isValidConfig(this.registered[config])
+      case 'string': return this.isValidSchema(this.registered[schema])
       default: return false
     }
   },
-  validateConfig (config) {
-    validate.recursive(config, 'Config must be not recursive')
-    if (!this.isValidConfig(config)) {
-      throw new TypeError('config must be string|symbol|array|function|object')
+  validateSchema (schema) {
+    validate.recursive(schema, 'Schema must be not recursive')
+    if (!this.isValidSchema(schema)) {
+      throw new TypeError('schema must be string|symbol|array|function|object')
     }
-    return config
+    return schema
   },
-  and (...configs) {
-    configs.forEach(validate.config)
+  and (...schemas) {
+    schemas.forEach(validate.schema)
     return (value, ...parents) => {
-      return configs.map(config => this(config)).every(f => f(value, ...parents))
+      return schemas.map(schema => this(schema)).every(f => f(value, ...parents))
     }
   },
   explain (
-    config,
+    schema,
     getExplanation = (value, ...parents) => ({ value, parents })
   ) {
-    const isValid = this(config)
+    const isValid = this(schema)
     const f = (obj, ...parents) => {
       if (isValid(obj, ...parents)) {
         return true
@@ -89,9 +92,9 @@ module.exports = () => ({
     }
     return str => regex.test(str)
   },
-  parent (config) {
-    validate.config(config)
-    const isValid = this(config)
+  parent (schema) {
+    validate.schema(schema)
+    const isValid = this(schema)
     return (value, ...parents) => {
       if (parents.length === 0) {
         return false
@@ -105,14 +108,14 @@ module.exports = () => ({
       return props.every(prop => Object.prototype.hasOwnProperty.call(obj, prop))
     }
   },
-  requiredIf (config) {
-    if (is(config)('boolean')) {
-      return config
+  requiredIf (schema) {
+    if (is(schema)('boolean')) {
+      return schema
         ? requiredValidator
         : () => true
     }
-    validate.config(config)
-    const isValid = this(config)
+    validate.schema(schema)
+    const isValid = this(schema)
     return (value, ...parents) => {
       const isRequired = isValid(value, ...parents)
       return isRequired
@@ -124,9 +127,9 @@ module.exports = () => ({
     const valuesSet = new Set(values)
     return value => valuesSet.has(value)
   },
-  arrayOf (config) {
-    validate.config(config)
-    const isValidElem = this(config)
+  arrayOf (schema) {
+    validate.schema(schema)
+    const isValidElem = this(schema)
     return (arr, ...parents) => {
       if (!Array.isArray(arr)) {
         return false
@@ -144,9 +147,9 @@ module.exports = () => ({
       return isValidArr
     }
   },
-  dictionaryOf (config) {
-    validate.config(config)
-    const isValidItem = this(config)
+  dictionaryOf (schema) {
+    validate.schema(schema)
+    const isValidItem = this(schema)
     return (dict, ...parents) => {
       if (isnt(dict)('object')) return false
       if (!this.allErrors) {
@@ -162,9 +165,9 @@ module.exports = () => ({
       return isValidDict
     }
   },
-  keys (config) {
-    validate.config(config)
-    const isValidKey = this(config)
+  keys (schema) {
+    validate.schema(schema)
+    const isValidKey = this(schema)
     return dict => {
       if (!this.allErrors) {
         return Object.keys(dict).every(isValidKey)
@@ -178,15 +181,15 @@ module.exports = () => ({
       return isValidKeys
     }
   },
-  not (config) {
-    validate.config(config)
-    const isValid = this(config)
+  not (schema) {
+    validate.schema(schema)
+    const isValid = this(schema)
     return (value, ...parents) => !isValid(value, ...parents)
   },
-  rest (config) {
-    validate.config(config)
+  rest (schema) {
+    validate.schema(schema)
     return {
-      [REST_PROPS]: config
+      [REST_PROPS]: schema
     }
   },
   min (minValue) {
@@ -221,12 +224,12 @@ module.exports = () => ({
       }
     }
   },
-  throwError (config, getErrorMessage = 'Validation error') {
-    validate.config(config)
+  throwError (schema, getErrorMessage = 'Validation error') {
+    validate.schema(schema)
     if (isnt(getErrorMessage)('string', 'function')) {
       throw new TypeError('getErrorMessage must be string|function(): string')
     }
-    const isValid = this(config)
+    const isValid = this(schema)
     return (value, ...parents) => {
       while (is(getErrorMessage)('function')) {
         getErrorMessage = getErrorMessage(value, ...parents)
@@ -240,9 +243,9 @@ module.exports = () => ({
       return value
     }
   },
-  validOr (config, defaultValue) {
-    validate.config(config)
-    const isValid = this(config)
+  validOr (schema, defaultValue) {
+    validate.schema(schema)
+    const isValid = this(schema)
     return (value, ...parents) => {
       if (!isValid(value, ...parents)) {
         return defaultValue
@@ -250,7 +253,7 @@ module.exports = () => ({
       return value
     }
   },
-  omitInvalidProps (objConfig, settings = { omitUnchecked: true }) {
+  omitInvalidProps (objSchema, settings = { omitUnchecked: true }) {
     if (isnt(settings)('object')) {
       throw new TypeError('settings must be object')
     }
@@ -261,15 +264,15 @@ module.exports = () => ({
     }
     const { omitUnchecked: omitUnchecked = true } = settings
 
-    while (isnt(objConfig)('object') && is(objConfig)('string')) {
-      objConfig = this.registered[objConfig]
+    while (isnt(objSchema)('object') && is(objSchema)('string')) {
+      objSchema = this.registered[objSchema]
     }
-    if (isnt(objConfig)('object')) {
-      throw new TypeError('Wrong object config')
+    if (isnt(objSchema)('object')) {
+      throw new TypeError('Wrong object schema')
     }
 
-    const restValidator = objConfig[REST_PROPS]
-      ? this(objConfig[REST_PROPS])
+    const restValidator = objSchema[REST_PROPS]
+      ? this(objSchema[REST_PROPS])
       : null
     return (obj, ...parents) => {
       if (isnt(obj)('object')) {
@@ -278,8 +281,8 @@ module.exports = () => ({
 
       if (!omitUnchecked || restValidator) {
         const newObj = { ...obj }
-        for (const [key, innerConfig] of Object.entries(objConfig)) {
-          const isValidProp = this(innerConfig)
+        for (const [key, innerSchema] of Object.entries(objSchema)) {
+          const isValidProp = this(innerSchema)
           if (!isValidProp(obj[key], new ParentKey(obj, key), ...parents)) {
             delete newObj[key]
           }
@@ -287,7 +290,7 @@ module.exports = () => ({
 
         if (!restValidator) return newObj
 
-        const checkedProps = new Set(Object.keys(objConfig))
+        const checkedProps = new Set(Object.keys(objSchema))
         const notCheckedProps = Object.entries(newObj).filter(([propName]) => !checkedProps.has(propName))
 
         for (const [key, value] of notCheckedProps) {
@@ -298,10 +301,10 @@ module.exports = () => ({
 
         return newObj
       }
-      return Object.entries(objConfig)
-        .filter(([key, config]) => {
+      return Object.entries(objSchema)
+        .filter(([key, schema]) => {
           const value = obj[key]
-          return this(config)(value, new ParentKey(obj, key), ...parents)
+          return this(schema)(value, new ParentKey(obj, key), ...parents)
         })
         .reduce((res, [key]) => {
           res[key] = obj[key]
@@ -309,8 +312,8 @@ module.exports = () => ({
         }, {})
     }
   },
-  omitInvalidItems (config) {
-    const isValid = this(config)
+  omitInvalidItems (schema) {
+    const isValid = this(schema)
 
     return (obj, ...parents) => {
       if (isnt(obj)('array', 'object')) {
@@ -329,24 +332,25 @@ module.exports = () => ({
         }, {})
     }
   },
-  withoutAdditionalProps (config) {
-    while (is(config)('string', 'symbol')) {
-      config = this.registered[config]
+  withoutAdditionalProps (schema) {
+    while (is(schema)('string', 'symbol')) {
+      schema = this.registered[schema]
     }
-    if (isnt(config)('object')) {
-      throw new TypeError('Config must be an object config')
+    if (isnt(schema)('object')) {
+      throw new TypeError('Schema must be an object schema')
     }
-    return this({ ...config, ...this.rest(() => false) })
+    return this({ ...schema, ...this.rest(() => false) })
   },
   fix (value) {
     const initialValue = clone(value)
     return fixByTree(this[FIX_TREE], initialValue)
   },
-  default (config, defaultValue) {
-    validate.config(config)
+  default (schema, defaultValue) {
+    validate.schema(schema)
 
-    const isValid = this(config)
-    return (value, ...parents) => {
+    const isValid = this(schema)
+    const that = this
+    return addExtension(function (value, ...parents) {
       if (isValid(value, ...parents)) {
         return true
       }
@@ -357,49 +361,52 @@ module.exports = () => ({
         ? defaultValue(value, ...parents)
         : defaultValue
 
-      this[FIX_TREE] = appendTree(keys, NODE_TYPES.DEFAULT, {
+      that[FIX_TREE] = appendTree(keys, NODE_TYPES.DEFAULT, {
         defaultValue: actualDefaultValue
-      }, this[FIX_TREE])
+      }, that[FIX_TREE])
       return false
-    }
+    })
   },
-  addFix (config, fixFunction) {
-    validate.config(config)
+  addFix (schema, fixFunction) {
+    validate.schema(schema)
     this.throwError('function', 'fixFunction must be a function')(fixFunction)
 
-    const isValid = this(config)
-    return (value, ...parents) => {
+    const isValid = this(schema)
+    const that = this
+    return addExtension(function (value, ...parents) {
       if (isValid(value, ...parents)) {
         return true
       }
 
       const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
 
-      this[FIX_TREE] = appendTree(keys, NODE_TYPES.FUNCTION, {
+      that[FIX_TREE] = appendTree(keys, NODE_TYPES.FUNCTION, {
         fixFunction
-      }, this[FIX_TREE])
+      }, that[FIX_TREE])
 
       return false
-    }
+    })
   },
-  filter (config) {
-    validate.config(config)
-    const isValid = this(config)
-    return (value, ...parents) => {
+  filter (schema) {
+    validate.schema(schema)
+    const isValid = this(schema)
+    const that = this
+    return addExtension(function (value, ...parents) {
       if (isValid(value, ...parents)) {
         return true
       }
 
       const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
 
-      this[FIX_TREE] = appendTree(keys.slice(0, -1), NODE_TYPES.FILTER, {
+      that[FIX_TREE] = appendTree(keys.slice(0, -1), NODE_TYPES.FILTER, {
         key: keys[keys.length - 1]
-      }, this[FIX_TREE])
+      }, that[FIX_TREE])
 
       return false
-    }
+    })
   },
   hasFixes () {
     return !isEmptyTree(this[FIX_TREE])
-  }
+  },
+  fromConfig
 })
