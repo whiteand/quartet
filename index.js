@@ -25,28 +25,30 @@ const compileOr = (arr, ctx) => {
   arr.forEach(validate.schema)
   return (value, ...parents) => arr.some(schema => compile(schema, ctx)(value, ...parents))
 }
+const validateObjectToFirstInvalid = (ctx, objSchema, obj, ...parents) => {
+  for (const [key, innerSchema] of Object.entries(objSchema)) {
+    const innerValue = obj[key]
+    const isInnerValueValid = compile(innerSchema, ctx)(innerValue, new ParentKey(obj, key), ...parents)
+    if (!isInnerValueValid) return false
+  }
 
+  if (is(objSchema[REST_PROPS])('undefined')) return true
+
+  const checkedPropsSet = new Set(Object.keys(objSchema))
+
+  const isValidRest = compile(objSchema[REST_PROPS], ctx)
+
+  return Object.entries(obj)
+    .filter(([prop]) => !checkedPropsSet.has(prop))
+    .every(([key, value]) => isValidRest(value, new ParentKey(obj, key), ...parents))
+}
 const compileObj = (objSchema, ctx) => {
   return (obj, ...parents) => {
     if (!obj) {
       return false
     }
     if (!ctx.allErrors) {
-      for (const [key, innerSchema] of Object.entries(objSchema)) {
-        const innerValue = obj[key]
-        const isInnerValueValid = compile(innerSchema, ctx)(innerValue, new ParentKey(obj, key), ...parents)
-        if (!isInnerValueValid) return false
-      }
-
-      if (is(objSchema[REST_PROPS])('undefined')) return true
-
-      const checkedPropsSet = new Set(Object.keys(objSchema))
-
-      const isValidRest = compile(objSchema[REST_PROPS], ctx)
-
-      return Object.entries(obj)
-        .filter(([prop]) => !checkedPropsSet.has(prop))
-        .every(([key, value]) => isValidRest(value, new ParentKey(obj, key), ...parents))
+      return validateObjectToFirstInvalid(ctx, objSchema, obj, ...parents)
     }
     let objValid = true
     for (const [key, innerSchema] of Object.entries(objSchema)) {
