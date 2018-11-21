@@ -935,7 +935,7 @@ console.log(v.explanation) // => [ '4th element is not a number: "5"','5th eleme
 console.log(v.fix(arr)) // => [ 1, 2, 3, 4, 5, 6, 7 ]
 ```
 
-## v.example :: (schema: Schema, ...examples: any)
+## v.example :: (schema: Schema, ...examples: any) => Validator |  throws TypeError
 
 If examples are not valid by schema - it will throw an erorr.
 It will return schema otherwise.
