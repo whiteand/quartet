@@ -908,7 +908,7 @@ Takes validator and returns new validator with side effect: if value is invalid 
 }}
 ```
 
-fromConfig is used to set validator, examples, explanation and fix at one config.
+`fromConfig` is used to set validator, examples, explanation and fix at one config.
 
 Example:
 
