@@ -141,7 +141,7 @@ const obj = {
   // wrong
   birthyear: '213',
   // wrong
-  email: ['wrong email', 'andrewbeletskiy@gmail.com', 'wrong email]
+  email: ['wrong email', 'andrewbeletskiy@gmail.com', 'wrong email']
 }
 v.resetExplanation()
 v(schema)(obj) // => false
