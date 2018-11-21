@@ -1,6 +1,6 @@
 {
   "name": "quartet",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "description": "Validation library: functional, convenient and compositional",
   "main": "index.js",
   "scripts": {

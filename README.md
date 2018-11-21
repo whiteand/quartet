@@ -899,7 +899,8 @@ Takes validator and returns new validator with side effect: if value is invalid 
 ```javascript
 @typedef Config {{
   validator: Schema, 
-  explanation: any|function(): any // not required
+  explanation?: any|function(): any // not required
+  examples?: []any,
   // one of the next fix params
   default: any,
   filter: any,
@@ -907,7 +908,7 @@ Takes validator and returns new validator with side effect: if value is invalid 
 }}
 ```
 
-fromConfig is used to set validator, explanation and fix at one config.
+fromConfig is used to set validator, examples, explanation and fix at one config.
 
 Example:
 
