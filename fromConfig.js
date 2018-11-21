@@ -10,14 +10,16 @@ const REDUCERS = {
   filter: (isFiltered) => (v, validator) => isFiltered
     ? v.filter(validator)
     : validator,
-  fix: fix => (v, validator) => v.addFix(validator, fix)
+  fix: fix => (v, validator) => v.addFix(validator, fix),
+  examples: examples => (v, validator) => v.example(validator, ...examples)
 }
 
 const DECORATOR_PROPS = new Set([
   'explanation',
   'default',
   'filter',
-  'fix'
+  'fix',
+  'examples'
 ])
 
 const getValidatorAndDecorators = function (config) {

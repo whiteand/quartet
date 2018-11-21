@@ -935,6 +935,42 @@ console.log(v.explanation) // => [ '4th element is not a number: "5"','5th eleme
 console.log(v.fix(arr)) // => [ 1, 2, 3, 4, 5, 6, 7 ]
 ```
 
+## v.example :: (schema: Schema, ...examples: any)
+
+If examples are not valid by schema - it will throw an erorr.
+It will return schema otherwise.
+
+```javascript
+v.example('number', 1,2,3,4, '4', '5', '6')
+//> throws error
+
+v.example(['number', 'string'], 1,2,3,4, '4', '5', '6')
+//> returns schema ['number', 'string']
+```
+
+It can be use as test for schema, and for documentation:
+
+```javascript
+  const personValidator = v.example(
+    {
+      name: v.and('not-empty', 'string'),
+      age: v.and('positive', 'number'),
+      position: 'string'
+    },
+    {
+      name: 'Max Karpenko',
+      age: 30,
+      position: 'Frontend Developer'
+    }
+  )
+  personValidator({
+    name: 'Max Karpenko',
+    age: 30,
+    position: 'Frontend Developer'
+  }) // => true
+
+```
+
 # Tips and Tricks
 
 ## Using OR combinator for explanation function

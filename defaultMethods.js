@@ -408,5 +408,13 @@ module.exports = () => ({
   hasFixes () {
     return !isEmptyTree(this[FIX_TREE])
   },
-  fromConfig
+  fromConfig,
+  example (schema, ...values) {
+    validate.schema(schema)
+    if (!values.length) {
+      throw new TypeError('There is not any example')
+    }
+    values.forEach(this.throwError(schema, `Examples don't match the schema`))
+    return this(schema)
+  }
 })

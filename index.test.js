@@ -1129,3 +1129,39 @@ describe('withoutAdditionalProps', () => {
     validatorName: `v.withoutAdditionalProps({ a: 'number' })`
   })
 })
+
+describe('examples', () => {
+  test('valid schema', () => {
+    expect(typeof v.fromConfig({
+      validator: 'number',
+      examples: [1, 2, 3, 0, NaN, Infinity, -Infinity]
+    })).toBe('function')
+    const personSchema = v.example(
+      {
+        name: v.and('not-empty', 'string'),
+        age: v.and('positive', 'number'),
+        position: 'string'
+      },
+      {
+        name: 'Max Karpenko',
+        age: 30,
+        position: 'Frontend Developer'
+      }
+    )
+    expect(personSchema({
+      name: 'Max Karpenko',
+      age: 30,
+      position: 'Frontend Developer'
+    })).toBe(true)
+    expect(typeof v.example('number', 1, 2, 3, 4, 5, 0, -1)).toBe('function')
+  })
+  test('invalid examples', () => {
+    expect(() => v.fromConfig({
+      validator: 'number',
+      examples: [1, 2, 3, 0, NaN, Infinity, -Infinity, '1']
+    })).toThrowError(new TypeError(`Examples don't match the schema`))
+  })
+  test('empty examples', () => {
+    expect(() => v.example('number')).toThrowError(new TypeError('There is not any example'))
+  })
+})
