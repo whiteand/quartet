@@ -343,8 +343,10 @@ v([
     ...
 ])
 ```
+
 There is *AND-composition*. It combines validations in such way that it returns true only if all of validations are true.
 It uses a such syntax:
+
 ```javascript
 v.and(
   andSchema,
@@ -355,6 +357,7 @@ v.and(
   ...
 )
 ```
+
 So you can see that first level of nestedness is - OR operator. Second level - AND operator. Third - is OR operator and so on.
 
 Let's try to create example of complexity, and destroy it with using registered validators and combinators.
@@ -424,7 +427,6 @@ There are such registered validators by default:
 
 So you can see that we shouldn't register own validators - if they are present by default. So example above can be rewritten without registering any of validators.
 
-
 # Methods
 
 ## Types
@@ -447,17 +449,11 @@ type FromValidable<T> = function(
 ) => T
 ```
 
----
-
 ### `v.registered :: Object<schemaName, schema: Schema>`
 returns object with registered schemas
 
----
-
 ### `v.register :: (AdditionalSchemas: object<string, Schema>) => quartet instance`
 returns new quartet instance with added aliases for validators.
-
----
 
 ### `v.required :: (...requiredProps: string) => (obj: object) => boolean`
 returns true if `obj` has all `requiredProps`.
@@ -466,8 +462,6 @@ returns true if `obj` has all `requiredProps`.
   v.required('a', 'b')({a: 1, b: 2}) // => true
   v.required('a', 'b')({a: 1}) // => false
 ```
-
----
 
 ### `v.requiredIf :: (isRequired: boolean) => Validator`
 
@@ -486,8 +480,6 @@ aNotRequired({}) // => true
 aRequired({ a: 1 }) // => false
 ```
 
----
-
 ### `v.requiredIf :: (schema: Schema) => Validator(value, ...parents)`
 if `v(schema)(value, ...parents)` returns true, then this field treated as required.
 
@@ -502,8 +494,6 @@ bObjValidator({ hasB: false }) // => true
 bObjValidator({ hasB: true }) // => false
 ```
 
----
-
 ### `v.arrayOf :: (schema: Schema) => (arr: any) => boolean`
 returns true if `arr` is Array and all elements of `arr` are valid
 
@@ -515,9 +505,8 @@ v.arrayOf(isPrime)([1,2,3,4,5,6,7]) // => false
 v.arrayOf(isPrime)([2,3,5,7]) // => true
 ```
 
----
-
 ### v.dictionaryOf :: (schema: Schema) => (dict: object<key, value>) => boolean`
+
 returns true if all values stored in `dict` are valid using `schema`.
 
 ```javascript
@@ -533,9 +522,8 @@ const isNumberDict = v.dictionaryOf('number')
 const isNumberDict2 = v({ ...v.rest('number') })
 ```
 
----
-
 ### `v.rest :: (schema: Schema) => object`
+
 Returns schema that can be spreaded into object validation schema to check other properties.
 
 ```javascript
@@ -556,9 +544,8 @@ aAndString({
 }) // => false
 ```
 
----
-
 ### v.keys :: (schema: Schema) => (dict: object<key, value>) => boolean`
+
 returns true if all keys used in `dict` are valid using `schema`
 
 ```javascript
@@ -568,9 +555,8 @@ isNumberDict({a: 1, b: 2, c: '3'}) // => true
 isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 ```
 
----
-
 ### `v.throwError :: (schema: Schema, errorMessage: string|FromValidable<string>) => FromValidable<any>`
+
 `throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
 
 ```javascript
@@ -578,8 +564,6 @@ const userId =
 v.throwError('number', 'userId must be a number')('123') // => throws new Error
 v.throwError('number', 'userId must be a number')(123) // => 123
 ```
-
----
 
 ### `v.min :: (minValue: number) => value => boolean`
 
@@ -594,14 +578,6 @@ If value is string, returns true only if
 If value is number, returns true only if
 
 `value >= minValue`
-
-If value instanceof Set, returns true only if
-
-`value.size >= minValue`
-
-If value instanceof Map, returns true only if
-
-`value.size >= minValue`
 
 ```javascript
 v.min(5)(4) // => false
@@ -642,14 +618,6 @@ If value is number, returns true only if
 
 `value <= maxValue`
 
-If value instanceof Set, returns true only if
-
-`value.size <= maxValue`
-
-If value instanceof Map, returns true only if
-
-`value.size <= maxValue`
-
 ```javascript
 v.max(5)(6) // => false
 v.max(5)(5) // => true
@@ -668,9 +636,8 @@ isValidName('andrew') // => false
 isValidName('andrew beletskiy') // => true
 ```
 
----
-
 ### `v.regex :: (regex: RegExp) => (str: any) => boolean`
+
 returns regex.test(str)
 
 ```javascript
@@ -679,9 +646,8 @@ v(/abc/)('  abcd') // => true
 v(/^abc/)('  abcd') // => false
 ```
 
----
-
 ### `v.explain :: (schema: Schema, explanation: any|function) => Validator`
+
 Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
 
 ```javascript
@@ -699,13 +665,9 @@ v.explanation // => []
 
 This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(schema, explanation)` if explanation is not undefined.
 
----
-
 ### not :: (schema: Schema) => Validator`
+
 Returns opposite validator.
-
----
-
 
 ### `omitInvalidItems :: (schema) => (collection: Array|object<key, value>) => Array|object<key, value>`
 
@@ -730,10 +692,9 @@ const onlyNumberProperties = v.omitInvalidItems("number")(
 onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
 ```
 
----
-
 
 ### `v.omitInvalidProps :: (objSchema: object|string, { omitUnchecked: boolean = true }) => object => object`
+
 Removes invalid properties. If keepUnchecked is falsy value, function will keep unchecked properties of object.
 
 ```javascript
@@ -761,22 +722,14 @@ removeInvalidProps({
 }) // => { num: 123, arrNum: [123], unchecked: 32 }
 ```
 
----
-
 ### `v.validOr :: (schema: Schema, defaultValue: any) => value => value`
 Returns `value` if it's valid. Returns `defaultValue` otherwise.
-
----
 
 ### `v.newCompiler :: (settings: { registered: Object<name, schema>, allErrors: boolean }) => quartet instance`
 Returns new instance of validator generator with custom aliases
 
----
-
 ### `v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`
 Returns validator, that returns true only of value isone of primitiveValues.
-
----
 
 ### `v.parent :: (schema: Schema) => Validator`
 Checks is parent of the value is valid.
