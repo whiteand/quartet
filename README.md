@@ -6,1005 +6,1011 @@
 <a href='https://coveralls.io/github/whiteand/quartet?branch=master'><img src='https://coveralls.io/repos/github/whiteand/quartet/badge.svg?branch=master' alt='Coverage Status' /></a>
 [![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/validation-quartet/support) [![Greenkeeper badge](https://badges.greenkeeper.io/whiteand/quartet.svg)](https://greenkeeper.io/)
 
+# Data Validation Practise for Frontend
 
-# quartet
+> If you want to know how to validate forms in Vue - this article, is not for you. You should use some standard Vue plugins such as: [vuelidate](https://monterail.github.io/vuelidate/)
+>
+> My advice: validation schema must be placed in component that will submit the form.
 
-Library for validations: beautiful and convenient
+We often create software that depends on data from some third side(ex. API calls, Backend, Parent Component, ...), you need to be ready that data you get can has any shape and content. So we need to validate data, that we take from other places.
+
+_____________________________________________________________
 
 ## Contents
 
-- [Example](#example)
-- [Install](#install)
-- [The Way of validation](#the-way-of-validation)
-  - [Types of validations](#types-of-validations)
-  - [Validation predicates](#validation-predicates)
-  - [Object validation](#object-validation)
-  - [Registered validations](#registered-validations)
-- [Default registered validators](#default-registered-validators)
-- [Methods](#methods)
-- [Fix Methods](#fix-methods)
-- [Tips and Tricks](#tips-and-tricks)
-#  Example
+- [Solution Requirements](#solution-requirements)
+- [Solution](#solution)
+- [Validation of types](#validation-of-types)
+  - [Numbers](#validation-of-numbers)
+  - [Strings](#validation-of-strings)
+  - [Other types](#validation-of-other-types)
+  - [Alternatives](#alternatives)
+- [Custom validation rules](#custom-validation-rules)
+- [Deep validation](#deep-validation)
+  - [Deep Validation of Object](#deep-validation-of-object)
+  - [Deep Validation of Array](#deep-validation-of-array)
+- [Fixing of invalid data](#fixing-of-invalid-data)
+- [Tracking](#tracking)
+  - [Messages](#messages)
+  - [Errors](#errors)
+- [Additional Possibilities](#additional-possibilities)
+- [API Docs](#api-docs)
+- [Other Solutions](#other-solutions)
+- [Contacts](#contacts)
+
+_____________________________________________________________
+
+## Solution Requirements
+
+For almost all solution there is more or less usefull solutions.  And for our problem we set these goals to be achieved:
+
+- Validation of types(number, object, array, string, null, undefined,...)
+- Custom validation rules;
+- Deep validation;
+- Fixing of invalid data:
+  - set default value;
+  - omit invalid.
+- Tracking:
+  - messages,
+  - errors;
+- Clear code
+  - Readable
+  - Modifiable
+
+_____________________________________________________________
+
+## Solution
+
+As one of the solutions that we can use to achieve this goals is [`quartet`](https://www.npmjs.com/package/quartet) library.
+
+These library based on this validation definition:
+> "To validate" is to prove that some data is acceptable for using.
+
+From the definition we see that validation has only two possible results: "data is acceptable" and "data is not acceptable". In javascript we represent this value in such way:
+
+| Result                | JS value |
+|:---------------------:|:--------:|
+| Data is acceptable    | `true`   |
+| Data isn't acceptable | `false`  |
+
+Let's see how do we use `quartet` to achieve goals described above.
+
+_____________________________________________________________
+
+## Validation of Types
+
+For testing types we can use default registered validators and custom functions.
 
 ```javascript
+// Import library
 import quartet from 'quartet'
-
-let v = quartet() // creating validator generator
-
-const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
-
-const schema = {
-  // string with length from 3 to 30
-  username: v.and('string', v.min(3), v.max(30)), 
-  // string with special pattern
-  password: v.and('string', v.regex(/^[a-zA-Z0-9]{3,30}$/)), 
-  // string or number
-  access_token: ['string', 'number'],
-  // integer number from 1900 to 2013
-  birthyear: v.and('safe-integer', v.min(1900), v.max(2013)), 
-  // email
-  email: v.and('string', v.regex(emailRegex))
-}
-
-const isValidObj = v(schema)
-
-// Valid example
-isValidObj({
-  username: 'andrew'
-  password: '123456qQ'
-  access_token: '321654897'
-  birthyear: 1996
-  email: 'test@mail.com'
-}) // => true
-
-// Not valid example
-isValidObj({
-  username: 'an' // wrong
-  password: '123456qQ'
-  access_token: '321654897'
-  birthyear: 1996
-  email: 'test@mail.com'
-}) // => false
+const v = quartet()
 ```
 
-If we need explanation, then we must use explanation validators (with second parameter of v).
+`v` - is a a function that transforms schema into validation function. It takes two arguments
+1. Validation schema (required)
+2. Custom error (optional)
+
+>**Validation schema** is one of:
+> - validation function (function that returns `true` or `false`)
+>- [names of registered validation functions](https://github.com/whiteand/quartet#default-registered-validators)
+>- array of schemas of validation alternatives.
+>- object like `{ key1: schemaForKey1, key2: schemaForKey2, ... }`
+
+>**Custom error** is any javascript value(except `undefined`) or function that returns any javascript value. This value will be treated as explanation of schema validation error. And will stored in `v.explanation`. Example of usage see in [Tracking](#tracking) section.
+
+_____________________________________________________________
+
+### Validation of Numbers
 
 ```javascript
-const EXPLANATION = {
-  NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
-  // as an explanation we will use propname, just for example
-  USER_NAME: 'username', 
-  PASSWORD: 'password', 
-  ACCESS_TOKEN: 'access_token',
-  BIRTH_YEAR: 'birth_year',
-  // explanation also can be a function that get actual value (and even more...)
-  EMAIL: email => ({ code: 'email', oldValue: email }) 
-}
-// v takes second parameter - explanation of error
-const explanationSchema = v({
-  username: v(schema.username, EXPLANATION.USER_NAME),  
-  password: v(schema.password, EXPLANATION.PASSWORD), 
-  access_token: v(schema.access_token, EXPLANATION.ACCESS_TOKEN), 
-  birthyear: v(schema.birthyear, EXPLANATION.BIRTH_YEAR), 
-  email: v(schema.email, EXPLANATION.EMAIL)
-}, EXPLANATION.NOT_A_VALID_OBJECT)
+const isNumber = v('number') // returns typeof value === 'number'
+isNumber(0)         // true
+isNumber(-1)        // true
+isNumber(1)         // true
+isNumber(1.2)       // true
+isNumber(NaN)       // true
+isNumber(Infinity)  // true
+isNumber(-Infinity) // true
 
-const isValidWithExplanation = v(explanationSchema)
-v.clearContext() // or just v()
-const isValid = isValidWithExplanation({
-  // wrong
-  username: 'an', 
-  password: '123456qQ',
-  // wrong
-  access_token: null, 
-  birthyear: 1996,
-  // wrong
-  email: '213' 
-}) // => true
-
-// all explanations will be saved into v.explanation
-const errors = v.explanation // errors = ['username', 'access_token', { code: 'email', value: '213'}]
-console.log(v.explanation.filter(v('string')).join(', ') + ' are not valid') // => 'username, access_token are not valid'
+isNumber('1')             // false
+isNumber(new Number(123)) // false
 ```
 
-If we want to set default values we can use fix methods (filter, default, addFix, ...):
+Checking of finite numbers (without NaN, Infinity, -Infinity)
 
 ```javascript
-const schema = {
-  username: v.default(
-    v.and('string', v.min(3), v.max(30)),
-    'unknown'
-  ), 
-  password: v.filter(
-    v.and('string', v.regex(/^[a-zA-Z0-9]{3,30}$/))
-  ), // removes password field if it's invalid
-  access_token: v.filter(['string', 'number']),
-  birthyear: v.default(
-    v.and('safe-integer', v.min(1900), v.max(2013)), 
-    1996
-  ),
-  emails: v.and(
-    v.default('array', []),
-    v.arrayOf(
-      v.filter( // removes element if invalid
-        v.and('string', v.regex(emailRegex))
-      )
-    )
-  )
-}
-const obj = {
-  // wrong
-  username: 'an', 
-  password: '123456qQ',
-  // wrong
-  access_token: null, 
-  // wrong
-  birthyear: '213',
-  // wrong
-  email: ['wrong email', 'andrewbeletskiy@gmail.com', 'wrong email']
-}
-v.clearContext()
-v(schema)(obj) // => false
-v.fix(obj)
-/*
-  => {
-    username: 'unknown',
-    password: '123456qQ',
-    brithyear: 1996,
-    emails: ['andrewbeletskiy@gmail.com']
-  } // it's returns new fixed value
-*/
-v.clearContext()
-obj.emails = null
-v(schema)(obj)
-v.fix(obj) // => { username: 'unknown', password: '123456qQ', brithyear: 1996, emails: [] }
+// Lets put all values into array
+// and find all values that are finite numbers
+const numberLikeValues = [0, -1, 1, 1.2, NaN, Infinity, -Infinity, '1', new Number(123)]
+
+// v('filter') is the same function as: value => Number.isFinite(value))
+numberLikeValues.filter(v('finite')) // [0, -1, 1, 1.2]
 ```
 
-Validators, object validators, variant validators, explanation validators and fix-validators are all can be composed into larger validator.
-
-# Install
-
-```
-npm install quartet
-```
-
-# The Way of Validation
-
-**Let's install and import quartet (it will be used in all examples below)**
+Checking of integer numbers
 
 ```javascript
-const quartet = require("quartet");
-let v = quartet() // create instance of validator generator
+// v('safe-integer') is the same function as: value => Number.isSafeInteger(value))
+numberLikeValues.filter(v('safe-integer')) // [0, -1, 1]
 ```
 
-## Types of validations
-
-There are four types of validations:
-
-- validation predicates (function that returns boolean value)
-- object validations (predicates for keys and values in object)
-- known to everybody (registered)
-- Combinated validation (all previous types in different combinations
-  using `and` and/or `or` logic operations)
-
-## Validation predicates
-
-It's maybe the simplest type of validations. So go to examples:
-If we want to validate even number we can just write:
+Also we can check number sign:
 
 ```javascript
-const isEven = x => x % 2 === 0;
-const isTwoEven = isEven(2);
+
+// v('positive') is the same function as: x => x > 0
+numberLikeValues.filter(v.and('positive', 'finite')) // [1, 1.2]
+
 ```
 
-This is very simple. Let's use `quartet` to rewrite it.
+> `v.and(schema, schema2, schema3, ...)` means that validated value must match `schema` **AND** `schema2` **AND** `schema3` and so on. 
+
 
 ```javascript
-const isEven = v(x => x % 2 === 0);
-const isTwoEven = isEven(2);
-// or
-const isTwoEven = v(x => x % 2 === 0)(2);
+// v('negative') is the same function as: x => x < 0
+numberLikeValues.filter(v.and('negative', 'number')) // [-1, -Infinity]
+
+// v('negative') is the same function as: x => x < 0
+numberLikeValues.filter(v.and('non-positive', 'finite')) // [0, -1]
+numberLikeValues.filter(v.and('non-negative', 'safe-integer')) // [0, 1]
 ```
 
-As you see `quartet` can take predicate function as a parameter. The first argument of the function is the value to be validate. (There are other arguments, but this is a different story)
-It seems to be not necessary to use `quartet` for such examples. So we should go deeper to see full beauty of validation!
+Also there is methods that returns number validation functions:
+- `v.min(minValue)`;
+- `v.max(maxValue)`;
+- `v.enum(value, value2, ...)` checks if validated value is one of passed values.
 
-## Object validation
-
-There is something in objects - they are complex, they consists of many different parts. All parts should be validated separately and sometimes all together.
-
-**Let's write some examples:**
-
-**Straight way of validation**
-
+Let's use them to test rating value:
 ```javascript
-const obj = {
-   theNumber: 1,
-   theString: '2',
-   theArray: [3],
-   theNull: null,
-   theUndefined: undefined,
-   theObject: {
-       innerProp: 100
-   }
-}
-// As you can see there are a lot of parts we can validate!
-const isObj = x => typeof x === 'object' && x !== null
-const isObjectValid(obj) {
- if (!isObj(obj)) return false
- if (typeof obj.theNumber !== 'number') return false
- if (typeof obj.theString !== 'string') return false
- if (!Array.isArray(obj.theArray)) return false
- if (obj.theArray.some(n => typeof n !== 'number')) return false
- if (obj.theNull !== null) return false
- if (!obj.hasOwnProperty('theUndefined') || obj.theUndefined !== undefined)
-   return false
- if (!isObj(obj.theObject))
-   return false
- if (typeof obj.theObject.innerProp !== 'number')
-   return false
- return true
-}
+// v.min(minValue) for numbers is the same function as: x => x >= minValue
+// v.max(minValue) for numbers is the same function as: x => x <= maxValue
+const isRating = v.and('safe-integer', v.min(1), v.max(5))
+
+isRating(1) // true
+isRating(5) // true
+
+isRating('2') // false
+isRating(0) // false
+isRating(6) // false
 ```
 
-Let's use `quartet`! (and maybe it will be easier to read and write?)
+The same, but with using of `v.enum`
 
 ```javascript
-const isNumber = n => typeof n === "number";
-const isObjectValidSchema = {
-  theNumber: isNumber,
-  theString: s => typeof s === "string",
-  theArray: arr => Array.isArray(arr) && arr.every(isNumber),
-  theNull: value => value === null,
-  theUndefined: (value, { key, parent }) =>
-    parent.hasOwnProperty(key) && value === undefined,
-  theObject: {
-    innerProp: isNumber
-  }
-};
-const isObjectValid = v(isObjectValidSchema);
-const isValid = isObjectValid(obj);
+// v.enum(...values) is the same function as: x => values.includes(x)
+const isRating2 = v.enum(1,2,3,4,5)
+
+isRating2(1) // true
+isRating2(5) // true
+
+isRating2('2') // false
+isRating2(0) // false
+isRating2(6) // false
 ```
 
-As you can see `quartet` also can takes an object as a schema. All values passed to resulting validation function must be an object. All properties must be validated using validation predicates.
+_____________________________________________________________
 
-But there is some new in this example. Let's look at validation for `theUndefined` property:
+### Validation of strings
 
 ```javascript
-theUndefined: (value, { key, parent }) =>
-  parent.hasOwnProperty(key) && value === undefined;
+const stringLikeObjects = [
+  '',
+  '123',
+  new String('123'),
+  Number('string')
+]
+
+// lets find only strings
+stringLikeObjects.filter(v('string')) // ['', '123']
 ```
 
-Predicate takes not only the value to be validated. It takes all parents in hierarchy of the object. It can be used for a such checking of required field.
-Also you can use values of other properties contained in the parent.
-
-You can do any validation you want using all parents of the value, because has a such specifiation:
+Also like for numbers there is additional registered validator for strings: `'not-empty'`:
 
 ```javascript
-function predicate(
-  valueToValidate,
-  {key: keyInParent, parent: valueOfParent},
-  {key: keyInParent2, parent: valueOfParent2},
-  ...
-): Boolean
+stringLikeObjects.filter(v.and('not-empty', 'string')) // ['123']
 ```
 
-Also as you can see: inner values of schema - are not only simple predicates. But they can be any valid schema for `quartet`. You can see how do we use object schema for checking `theObject` property.
+There is also methods for creating string validation functions:
+- v.regex(regularExpression: RegExp);
+- v.min(minLength: number);
+- v.max(minLength: number).
 
-(You can see that code is still not so beautiful as we want. What do we want? Go deeper to see it!)
-
-## Registered validations
-
-As you can see there are a lot of simple small validators like `isNumber` or `isArray`. It will be better to write them once and use everywhere, won't it?
-Let's use `quartet` for it:
-
+Let's use them to check password (stupid passwords only)
 ```javascript
-v = v.register({ // Returns new validator generator with such aliases
-  number: x => typeof x === "number",
-  array: x => Array.isArray(x),
-  string: x => typeof x === "string",
-  object: x => typeof x === "object",
-  "undefined": x => x === undefined,
-  "null": x => x === null,
-  required: (_, { key, parent }) => parent.hasOwnProperty(key)
-})
+const v = require('quartet')()
 
-const isObjectValidSchema = {
-  theNumber: "number",
-  theString: "string",
-  theArray: arr => v("array")(arr) && arr.every(v("number")),
-  theNull: "null",
-  theUndefined: (x, parent) => v("required")(x, parent) && v("undefined")(x),
-  theObject: {
-    innerProp: "number"
-  }
-};
-const isValid = v(isObjectValidSchema)(obj);
-```
-
-This is interesting and useful solution, but this is much complicted that it was before, but we can do better! Go deeper!
-
-## Combinated validations
-
-This complexity is bad. It's scary thing that people hate.
-
-Complexity can be defeated by _composition_.
-
-We use combinators for creating composition.
-
-There is *OR-composition*. It combines validations in such way that it returns true if some of validations are true.
-It uses a such syntax:
-
-```javascript
-v([
-    orSchema,
-    orSchema2,
-    orSchema3,
-    ...
-])
-```
-
-There is *AND-composition*. It combines validations in such way that it returns true only if all of validations are true.
-It uses a such syntax:
-
-```javascript
-v.and(
-  andSchema,
-  andSchema2,
-  andSchema3,
-  andSchema4,
-  andSchema5,
-  ...
+const isValidPassword = v.and(
+  'string',                   // typeof x === 'string'
+  v.min(8),                   // length >= 8
+  v.max(24),                  // length <= 24
+  v.regex(/^[a-zA-Z0-9]+$/),  // must contain only letters and digits
+  v.regex(/[a-z]/),           // at least one small letter
+  v.regex(/[A-Z]/),           // at least one big letter
+  v.regex(/[0-9]/)            // at least one digit
 )
+console.log(isValidPassword('12345678'))         // false
+console.log(isValidPassword('12345678Password')) // true
 ```
 
-So you can see that first level of nestedness is - OR operator. Second level - AND operator. Third - is OR operator and so on.
+_____________________________________________________________
 
-Let's try to create example of complexity, and destroy it with using registered validators and combinators.
+### Validation of Other Types
 
-```javascript
-const v = require("quartet");
-
-const obj = {
-  theNumberOrString: "2",
-  theString: "2",
-  theArrayOfNumbers: [3],
-  theNull: null,
-  theRequiredUndefinedOrNumber: undefined,
-  theObject: {
-    innerProp: 100
-  }
-};
-
-v = v.register({ // Returns new validator generator with such aliases
-  number: x => typeof x === "number",
-  array: x => Array.isArray(x),
-  string: x => typeof x === "string",
-  object: x => typeof x === "object",
-  "undefined": x => x === undefined,
-  "null": x => x === null,
-  required: (_, { key, parent }) => parent.hasOwnProperty(key)
-})
-
-const isObjectValidSchema = {
-  theNumberOrString: ["number", "string"],
-  theString: "string",
-  theArrayOfNumbers: v.arrayOf("number"),
-  theNull: "null",
-  theRequiredUndefinedOrNumber: v.and("required", ["undefined", "number"]),
-  theObject: {
-    innerProp: "number"
-  }
-};
-v(isObjectValidSchema)(obj);
-```
-
-# Default registered validators
-
-There are such registered validators by default:
+You can use next registered validation functions in your validation schemas to check type.
 
 |      name      |                   condition                    |
 | :------------: | :--------------------------------------------: |
-|    'string'    |            `typeof x === 'string'`             |
+| 'boolean'      |        `x => typeof x === 'boolean'`           |
 |     'null'     |               `x => x === null`                |
 |  'undefined'   |             `x => x === undefined`             |
 |     'nil'      |      `x => x === null || x === undefined`      |
-| 'boolean'      |        `x => typeof x === 'boolean'`           |
-|    'number'    |          `x => typeof x === 'number'`          |
-| 'safe-integer' |         `x => Number.isSafeInteger(x)`         |
-|    'finite'    |           `x => Number.isFinite(x)`            |
-|   'positive'   |                  `x => x > 0`                  |
-|   'negative'   |                  `x => x < 0`                  |
-| 'non-negative' |                 `x => x >= 0`                  |
-| 'non-positive' |                 `x => x <= 0`                  |
 |    'object'    |          `x => typeof x === 'object'`          |
 |   'object!'    |   `x => typeof x === 'object' && x !== null`   |
 |    'array'     |            `x => Array.isArray(x)`             |
-|  'not-empty'   | return `true` if value is not empty (see code) |
 |    'symbol'    |          `x => typeof x === 'symbol'`          |
 |   'function'   |         `x => typeof x === 'function'`         |
-|     'log'      |   returns `true` and logs value and parents    |
-|   'required'   |  returns `true` - if parent has the property   |
 
-So you can see that we shouldn't register own validators - if they are present by default. So example above can be rewritten without registering any of validators.
+_____________________________________________________________
 
-# Methods
+## Alternatives
 
-## Types
+Sometimes there is need to validate data that can be different types.
+
+You can use schema of alternatives to get such behavior:
+
 ```javascript
-type Schema = function|string|object|Array`
-type Parent = { key: string|number, parent: object|array }
-type Validator = function(
-  value: any,
-  parent: Parent,
-  grandParent: Parent,
-  grandGrandParent: Parent,
-  ...
-) => boolean
-type FromValidable<T> = function(
-  value: any,
-  parent: Parent,
-  grandParent: Parent,
-  grandGrandParent: Parent,
-  ...
-) => T
+// It is works exactly as OR operator in JS,
+// if some of alternatives - true, it will return true immediately
+v(['number', 'string'])(1) // true
+v(['number', 'string'])('1') // true
+
+v(['number', 'string'])(null) // false
+v(['number', 'string'])(new String(123)) // false
+
+v(['number', 'string', 'object'])(null) // true
+v(['number', 'string', 'object'])(new String(123)) // true
 ```
 
-### `v.registered :: Object<schemaName, schema: Schema>`
-returns object with registered schemas
+_____________________________________________________________
 
-### `v.register :: (AdditionalSchemas: object<string, Schema>) => quartet instance`
-returns new quartet instance with added aliases for validators.
+## Custom validation rules
 
-### `v.required :: (...requiredProps: string) => (obj: object) => boolean`
-returns true if `obj` has all `requiredProps`.
+As it was said before: validation function is one of
+valid schemas. If you want to add your own rule - you just need to use your validation function as a schema.
 
 ```javascript
-  v.required('a', 'b')({a: 1, b: 2}) // => true
-  v.required('a', 'b')({a: 1}) // => false
-```
-
-### `v.requiredIf :: (isRequired: boolean) => Validator`
-
-if `isRequired` is truthy, validator returns true only if parent has such property.
-
-```javascript
-const aRequired = v({
-  a: v.requiredIf(true)
-});
-const aNotRequired = v({
-  a: v.requiredIf(false)
-});
-aRequired({ a: 1 }) // => true
-aNotRequired({ a: 1 }) // => true
-aNotRequired({}) // => true
-aRequired({ a: 1 }) // => false
-```
-
-### `v.requiredIf :: (schema: Schema) => Validator(value, ...parents)`
-if `v(schema)(value, ...parents)` returns true, then this field treated as required.
-
-```javascript
-const hasParentHasB = (_, { parent }) => parent.hasB
-const bObjValidator = v({
-  hasB: "boolean",
-  b: v.requiredIf(getParentHasB) // if hasB is true, then b must be required
-})
-bObjValidator({ hasB: true, b: 1 }) // => true
-bObjValidator({ hasB: false }) // => true
-bObjValidator({ hasB: true }) // => false
-```
-
-### `v.arrayOf :: (schema: Schema) => (arr: any) => boolean`
-returns true if `arr` is Array and all elements of `arr` are valid
-
-```javascript
-v.arrayOf('number')([1,2,3,3,4,5]) // => true
-v.arrayOf('number')([1,'2',3,'3',4,5]) // => false
-
-v.arrayOf(isPrime)([1,2,3,4,5,6,7]) // => false
-v.arrayOf(isPrime)([2,3,5,7]) // => true
-```
-
-### v.dictionaryOf :: (schema: Schema) => (dict: object<key, value>) => boolean`
-
-returns true if all values stored in `dict` are valid using `schema`.
-
-```javascript
-const isNumberDict = v.dictionaryOf('number')
-isNumberDict({a: 1, b: 2, c: 3}) // => true
-isNumberDict({a: 1, b: 2, c: '3'}) // => false
-```
-
-`dictionaryOf` can be rewritten with using `v.rest` method
-
-```javascript
-const isNumberDict = v.dictionaryOf('number')
-const isNumberDict2 = v({ ...v.rest('number') })
-```
-
-### `v.rest :: (schema: Schema) => object`
-
-Returns schema that can be spreaded into object validation schema to check other properties.
-
-```javascript
-const aAndStrings = v({
-  a: 'number', 
-  ...v.rest('string')
-})
-aAndString({
-  a: 1
-}) // => true
-aAndString({
-  a: 1,
-  b: '1'
-}) // => true
-aAndString({
-  a: 1,
-  b: 2
-}) // => false
-```
-
-### v.keys :: (schema: Schema) => (dict: object<key, value>) => boolean`
-
-returns true if all keys used in `dict` are valid using `schema`
-
-```javascript
-const isAbcDict = v.keys(key => ['a', 'b', 'c'].includes(key))
-isNumberDict({a: 1, b: 2, c: 3}) // => true
-isNumberDict({a: 1, b: 2, c: '3'}) // => true
-isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
-```
-
-### `v.throwError :: (schema: Schema, errorMessage: string|FromValidable<string>) => FromValidable<any>`
-
-`throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
-
-```javascript
-const userId = 
-v.throwError('number', 'userId must be a number')('123') // => throws new Error
-v.throwError('number', 'userId must be a number')(123) // => 123
-```
-
-### `v.min :: (minValue: number) => value => boolean`
-
-If value is array, returns true only if
-
-`value.length >= minValue`
-
-If value is string, returns true only if
-
-`value.length >= minValue`
-
-If value is number, returns true only if
-
-`value >= minValue`
-
-```javascript
-v.min(5)(4) // => false
-v.min(5)(5) // => true
-v.min(5)(6) // => true
-
-const isValidYear = v(v.and('number', v.min(1900), v.max(2100)))
-isValidYear('1875') // => false, because of type string
-isValidYear(1875) // => false
-isValidYear(1996) // => true
-isValidYear(2150) // => false
-
-v.min(5)([1,2,3,4]) // => false
-v.min(5)([1,2,3,4,5]) // => true
-v.min(5)([1,2,3,4,5,6]) // => true
-
-const isValidMiddleSizeArrayOfNumbers = v(v.and(v.arrayOf('number'), v.min(5), v.max(10)))
-isValidMiddleSizeArrayOfNumbers([1,2,3,4,'5',6]) // => false, because of '5'
-isValidMiddleSizeArrayOfNumbers([1,2,3]) // => false, because of length
-isValidMiddleSizeArrayOfNumbers([1,2,3, 4,5,6,7]) // => true
-
-v.min(5)('1234') // => false
-v.min(5)('12345') // => true
-v.min(5)('12346') // => true
-```
-
-### `v.max :: (maxValue: number) => value => boolean`
-
-If value is array, returns true only if
-
-`value.length <= maxValue`
-
-If value is string, returns true only if
-
-`value.length <= maxValue`
-
-If value is number, returns true only if
-
-`value <= maxValue`
-
-```javascript
-v.max(5)(6) // => false
-v.max(5)(5) // => true
-v.max(5)(4) // => true
-
-v.max(5)([1,2,3,4,5,6]) // => false
-v.max(5)([1,2,3,4,5]) // => true
-v.max(5)([1,2,3,4]) // => true
-
-v.max(5)('123456') // => false
-v.max(5)('12345') // => true
-v.max(5)('1234') // => true
-
-const isValidName = v(v.and('string', v.min(8), v.max(16)))
-isValidName('andrew') // => false
-isValidName('andrew beletskiy') // => true
-```
-
-### `v.regex :: (regex: RegExp) => (str: any) => boolean`
-
-returns regex.test(str)
-
-```javascript
-v(/abc/)('abcd') // => true
-v(/abc/)('  abcd') // => true
-v(/^abc/)('  abcd') // => false
-```
-
-### `v.explain :: (schema: Schema, explanation: any|function) => Validator`
-
-Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
-
-```javascript
-v.clearContext()
-const isValid = v.explain("number", value => value);
-isValid(1) // => true
-v.explanation // => []
-isValid(null)
-v.explanation // => [NULL]
-isValid(2)
-v.explanation // => [NULL]
-v.clearContext()
-v.explanation // => []
-```
-
-This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(schema, explanation)` if explanation is not undefined.
-
-### not :: (schema: Schema) => Validator`
-
-Returns opposite validator.
-
-### `omitInvalidItems :: (schema) => (collection: Array|object<key, value>) => Array|object<key, value>`
-
-If `collection` is array, the returs new array without invalid values.
-
-If `collection` is object, then returns new object without invalid values.
-
-```javascript
-const arr = [1, "2", 3, "4", 5];
-
-const onlyNumbers = v.omitInvalidItems("number")(arr); // [1, 3, 5]
-const onlyStrings = v.omitInvalidItems("string")(arr); // ["2", "4"]
-
-const invalidNumberDict = {
-  a: 1,
-  b: "2",
-  c: 3
-};
-const onlyNumberProperties = v.omitInvalidItems("number")(
-  invalidNumberDict
-);
-onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
-```
-
-
-### `v.omitInvalidProps :: (objSchema: object|string, { omitUnchecked: boolean = true }) => object => object`
-
-Removes invalid properties. If keepUnchecked is falsy value, function will keep unchecked properties of object.
-
-```javascript
-const removeInvalidProps = v.omitInvalidProps({
-  num: 'number',
-  str: 'string',
-  arrNum: v.arrayOf('number')
-})
-removeInvalidProps({
-  num: 123,
-  str: 123,
-  arrNum: [123],
-  unchecked: 32
-}) // => { num: 123, arrNum: [123]}
-const removeInvalidKeepUnchecked = v.omitInvalidProps({
-  num: 'number',
-  str: 'string',
-  arrNum: v.arrayOf('number')
-}, { omitUnchecked: false })
-removeInvalidProps({
-  num: 123,
-  str: 123,
-  arrNum: [123],
-  unchecked: 32
-}) // => { num: 123, arrNum: [123], unchecked: 32 }
-```
-
-### `v.validOr :: (schema: Schema, defaultValue: any) => value => value`
-Returns `value` if it's valid. Returns `defaultValue` otherwise.
-
-### `v.newCompiler :: (settings: { registered: Object<name, schema>, allErrors: boolean }) => quartet instance`
-Returns new instance of validator generator with custom aliases
-
-### `v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`
-Returns validator, that returns true only of value isone of primitiveValues.
-
-### `v.parent :: (schema: Schema) => Validator`
-Checks is parent of the value is valid.
-
-```javascript
-  // example above can be rewritten with using of parent method
-  
-  const bObjValidator = v({
-    hasB: "boolean",
-    b: v.requiredIf(v.parent(p => p.hasB)) // if hasB is true, then b must be required
-  })
-  bObjValidator({ hasB: true, b: 1 }) // => true
-  bObjValidator({ hasB: false }) // => true
-  bObjValidator({ hasB: true }) // => false
-```
-
-### `v.withoutAdditionalProps :: (schema: object|string) => Validator`
-Returns true only if passed value is object and has valid props and has not any additional properties.
-
-```javascript
-  const onlyANumber = v.withoutAdditionalProps({ a: 'number' })
-  onlyANumber(null) // => false
-  onlyANumber(1) // => false
-  onlyANumber({ a: 1 }) // => true
-  onlyANumber({ a: '1' }) // => false
-  onlyANumber({ a: 1, b: 2 }) // => false
-```
-
-# Fix Methods
-
-Fix methods takes validators and returns validator with side-effect of recording how to fix invalidation. And after validation we can use method `v.fix(invalidValue) => validValue` to fix errors.
-
-### Warning: if there is fix of child and fix of parent - only parent fix will be applied:
-
-```javascript
-  const isObjectValid = v(v.default({
-    child: v.default('string', '')
-  }), {})
-  const obj = { child: 1 }
-  isObjectValid(obj)
-  v.fix(obj) // => {}
-```
-
-## `v.fix :: (value: any) => any`
-
-It gets all fixes added by fix methods and applies it on `value`. Returns new value with all fixes applied. It's pure function.
-
-
-There three main fix methods: filter, default, addFix.
-
-## `v.filter :: (schema) => Validator`
-
-Takes validator and returns new validator with side effect: if value is invalid - it will be removed with using `v.fix` from parent (object or array)
-
-```javascript
- const obj = {
-   arr: [1,2,'3',4,5]
-   obj: {
-     a: 1, // must be removed
-     b: 2, // not removed
-     c: '3', // must be removed
-     d: 'string' // not removed
-   }
- }
- v.resetExlanation()({
-  arr: v.arrayOf(v.filter('number')),
-  obj: {
-    a: v.filter('string'),
-    d: v.filter('string')
-    ...v.rest(v.filter('number'))
+const isPrime = n => {
+  if (n < 2) return false
+  if (n === 2 || n === 3) return true
+  if (n % 2 === 0 || n % 3 === 0) return false
+  for (let i = 5, j = 7; i * i <= n; i++, j++) {
+    if (n % i === 0) return false
+    if (n % j === 0) return false
   }
- })(obj) // => false
- console.log(v.hasFixes()) // => true
- console.log(v.fix(obj)) // => { arr: [1,2,4,5], obj: { b: 2, d: 'string' } }
+  return true
+}
+const isPrimeAndNotLessThan100 = v.and(
+  'safe-integer',
+  v.min(100),
+  isPrime // validation function
+)
+isPrimeAndNotLessThan100(512) // false, 512 is NOT a prime number
+isPrimeAndNotLessThan100(523) // true, 523 > 100, 523 is a prime number
 ```
 
-## `v.default :: (schema, defaultValue) => Validator`
+_____________________________________________________________
 
-Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
+## Deep validation
 
-```javascript
- const obj = {
-   arr: [1,2,'3',4,5]
-   obj: {
-     a: 1, // must be removed
-     b: 2, // not removed
-     c: '3', // must be removed
-     d: 'string' // not removed
-   }
- }
- v.resetExlanation()({
-  arr: v.arrayOf(v.default('number', 0)),
-  obj: {
-    a: v.default('string', ''),
-    ...v.rest(v.default('number'))
-    d: v.default('number', 0)
-  }
- })(obj) // => false
- console.log(v.hasFixes()) // => true
- console.log(v.fix(obj)) // => { arr: [1,2,0,4,5], obj: { a: '', b: 2, c: 0, d: 'string' } }
-```
+> Deep validation means validation of not primitive data structures.
+> Data structure can be accepted only if it has right type and all parts of it are valid.
 
-## `v.addFix :: (schema, fixFunction) => Validator`
+The most popular data structures is object and array.
 
-Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
+_____________________________________________________________
 
-```javascript
- const arr = [1,2,'3',4,5]
- v.resetExlanation()
- const toNumber = (v, { key, parent }) => { // changes value to number
-   parent[key] = Number(v) // we need to change by parent reference in order to mutate fix result
- }
- v(v.arrayOf(v.addFix('number', toNumber))(obj) // => false
- console.log(v.hasFixes()) // => true
- console.log(v.fix(obj)) // => [1,2,3,4,5]
-```
+### Deep Validation of Object
 
-## `v.fromConfig :: (config: Config) => Validator`
+For validation of object `quartet` uses object schema.
 
-```javascript
-@typedef Config {{
-  validator: Schema, 
-  explanation?: any|function(): any // not required
-  examples?: []any,
-  // one of the next fix params
-  default: any,
-  filter: any,
-  fix: function(invalidValue, { key, parent}, ...): void // mutate parent to fix error
-}}
-```
+> **Object schema** is an object of a such structure
+>  ```javascript
+>  {
+>   key1: schema1,
+>   key2: schema2,
+>   // ...
+>   // And if you need to validate other properties of object
+>   // You can use v.rest(schema) method (it returns an object that must be spreaded into object schema)
+>  ...v.rest(schemaAppliedToOtherValues)
+> }
+> ```
 
-`fromConfig` is used to set validator, examples, explanation and fix at one config.
+ _Example:_
 
-Example:
-
-```javascript
-const arr = [1, 2, 3, 4, '5', '6', 7]
-const isElementValid = v.fromConfig({
-  validator: 'number',
-  explanation: (value, { key }) => `${key}th element is not a number: ${JSON.stringify(value)}`,
-  fix: (invalidValue, { key, parent }) => {
-    parent[key] = Number(invalidValue)
+ ```javascript
+// `v` treats object as an object
+const isWorkerValid = v({
+  name: v.and('not-empty', 'string'),
+  age: v.and('positive', 'safe-integer)',
+  position: v.enum(
+    'Frontend Developer',
+    'Backend Developer',
+    'QA',
+    'Project manager',
+    'Grandpa'
+  ),
+  salary: v.and('positive', 'finite'),
+  project: v.enum(
+    'Shoutout',
+    'FMEvents',
+    'Jobla.co'
+  ),
+  // Any field can be object too
+  skills: {
+    JS: 'boolean',
+    HTML: 'boolean',
+    CSS: 'boolean',
+    ...v.rest('boolean') // other keys must be boolean too
   }
 })
+```
 
-const isArrValid = v.fromConfig({
-  validator: v.arrayOf(isElementValid),
-  explanation: 'Not valid array'
+Lets validate some object with using of this validation function
+
+```javascript
+const worker = {
+  name: 'Max',
+  age: 31,
+  position: 'Grandpa',
+  salary: Math.random() * 3000,
+  project: 'Jobla.co',
+  skills: {
+    JS: true,
+    HTML: true,
+    CSS: true,
+    'C++ advanced': false,
+    'GPU programming': false
+  }
+}
+isWorkerValid(worker) // true
+```
+
+There is additional methods for **dictionary object** validation:
+- `v.dictionaryOf(schema)` - checks values of object;
+- `v.keys(schema)` - checks keys of object;
+- `v.rest(schema)` - if other properties will be present - they will be validated with using of the schema.
+
+_Example: Validation of dictionary object_
+
+```javascript
+
+const lowLettersDict = {
+  A: 'a',
+  B: 'b',
+  C: 'c'
+}
+const isValidLettersDict = v.and(
+  v.keys(v.regex(/^[A-Z]$/)),
+  v.dictionaryOf(v.regex(/^[a-z]$/))
+)
+console.log(isValidLettersDict(lowLettersDict))
+```
+
+Lets check if keys corresponds values with using of
+custom validation function
+
+```javascript
+// second parameter of all validation function is
+// {
+//   key: string|number,
+//   parent: any
+// }
+// (if the parent is present)
+function isValueValid (value, { key }) {
+  return /^[A-Z]$/.test(key)        // upperCased key
+    && /^[a-z]$/.test(value)        // lowerCased value
+    && value === key.toLowerCase()  // correspond each other
+}
+
+const isValidLettersDict2 = v.dictionaryOf(isValueValid)
+
+console.log(isValidLettersDict2(lowLettersDict)) // true
+console.log(isValidLettersDict2({ A: 'b' })) // false, NOT CORRESPONDS
+console.log(isValidLettersDict2({ b: 'b' })) // false, b is not UpperCased
+console.log(isValidLettersDict2({ B: 'B' })) // false, B is not LowerCased
+```
+_____________________________________________________________
+
+### Deep Validation of Array
+
+For deep validation of array we can use `v.arrayOf(schema)` method.
+
+```javascript
+const arr = [1,2,3,4]
+const invalidArrOfNumbers = [1,2,'3','4']
+
+const isArrayValid = v.arrayOf('number')
+
+isArrayValid(arr) // true
+isArrayValid(invalidArrOfNumbers) // false
+```
+
+Also we can combine array validation schema with object schemas
+
+```javascript
+const isValidPointArray = v.arrayOf({
+  x: 'finite',
+  y: 'finite'
+})
+isValidPointArray([
+  { x: 1, y: 2},
+  { x: -1, y: 3},
+  { x: 0, y: 0},
+]) // true
+```
+
+And in other way: object with array property:
+
+```javascript
+const student = {
+  name: 'Valera',
+  grades: ['A', 'B', 'C','A', 'D', 'F']
+}
+const isStudentValid = v({
+  name: 'string',
+  grades: v.arrayOf(v.enum('A', 'B', 'C', 'D', 'E', 'F'))
 })
 
-v()
-
-isArrValid(arr) // => false
-
-console.log(v.hasFixes()) // => true
-console.log(v.explanation) // => [ '4th element is not a number: "5"','5th element is not a number: "6"', 'Not valid array' ]
-console.log(v.fix(arr)) // => [ 1, 2, 3, 4, 5, 6, 7 ]
+isStudentValid(student) // true
 ```
+_____________________________________________________________
 
-## v.example :: (schema: Schema, ...examples: any) => Validator |  throws TypeError
+## Fixing of invalid data:
 
-If examples are not valid by schema - it will throw an erorr.
-It will return schema otherwise.
+What if some validation errors we can fix. For example, we can replace invalid data with empty valid data. Also, sometimes we can omit invalid data. Or in rare keys - we should try to transform invalid data to valid.
+
+In `quartet` there are methods for such task. Main method is
+- `v.fix(invalidValue) => validValue`
+
+This method is used for applying all fixes that was collected during the validation. It doesn't change invalidValue, but returns new value with applied fixes.
+
+Methods `v.default(schema, defaultValue)`, `v.filter(schema)` and `v.addFix(schema, fixFunction)` are decorators of validators. It means that they return new validation function that works exactly as passed schema, but with side effect of collecting of fixes.
+
+| Decorator   | Fix effect, after calling `v.fix` |
+|:-----------:|:---------------------------------:|
+| `v.default` | Replace value with defaultValue   |
+| `v.filter`  | Removes value from parent         |
+| `v.addFix`  | Custom fixFunction mutates parents<br>of the value to fix an error |
+
+
+_Example:_
+
+Let's create several validation functions with different effects.
 
 ```javascript
-v.example('number', 1,2,3,4, '4', '5', '6')
-//> throws error
+const arr = [1,2,3,4,'5','6','7']
 
-v.example(['number', 'string'], 1,2,3,4, '4', '5', '6')
-//> returns schema ['number', 'string']
+// Replaces all not numbers with 0
+const isArrayValid = v.arrayOf(
+  v.default('number', 0)
+)
+
+// Removes all not numbers from parent(array)
+const isArrayValidFilter = v.arrayOf(
+  v.filter('number')
+)
+
+// This function will be called on value in the clone of invalid data
+// So this mutations - are safe.
+function castToNumber(invalidValue, { key, parent }) {
+  parent[key] = Number(invalidValue)
+}
+
+// casts all not numbers into numbers
+const isArrayValidFix = v.arrayOf(
+  v.addFix('number', castToNumber)
+)
 ```
 
-It can be use as test for schema, and for documentation:
+Let's use them to validate `arr`:
 
 ```javascript
-  const personValidator = v.example(
-    {
-      name: v.and('not-empty', 'string'),
-      age: v.and('positive', 'number'),
-      position: 'string'
-    },
-    {
-      name: 'Max Karpenko',
-      age: 30,
-      position: 'Frontend Developer'
-    }
+v.clearContext() // remove all fixes stored in `v`
+isArrayValid(arr) // false
+const validArr = v.fix(arr)
+console.log(validArr) // [1,2,3,4,0,0,0]
+
+v.clearContext() // remove previous fixes
+isArrayValidFilter(arr) // false
+const validArr2 = v.fix(arr) // [1,2,3,4]
+
+v() // same as v.clearContext()
+isArrayValidFix(arr) // false
+const validArr3 = v.fix(arr) // [1,2,3,4,5,6,7]
+
+// arr is not mutated
+console.log(arr) // [1,2,3,4,'5','6','7']
+```
+
+> **NOTE:** if there is "fix effect" on parent "fix effect" of children will not be applied(if fix effect on parent is not "filter effect").
+>
+> It means we should use such rule: if there is a "fix effect", it must fix all invalidation of the value it must fix.
+_Example:_
+
+```javascript
+const isObjectValid = v({
+  arr: v.default( // will be applied
+    v.arrayOf(
+      v.filter('number') // will not be applied
+    ),
+    [] // if there will be any not number - all array will be replaced with []
   )
-  personValidator({
-    name: 'Max Karpenko',
-    age: 30,
-    position: 'Frontend Developer'
-  }) // => true
-
+})
+const invalidObj = {
+  arr: [1,2,3,'4']
+}
+v()
+isObjectValid(invalidObj)
+const validObj = v.fix(invalidObj) // { arr: [] }
 ```
 
-# Tips and Tricks
+> Also there is `v.hasFixes` method: it returns `true` - if some fixes was collected, and ready to be applied. Returns `false` otherwise.
 
-## Using OR combinator for explanation function
+_____________________________________________________________
 
-It's the same trick that we can use when write such things
+## Tracking
+
+Sometimes we need not only to check if value is not valid, 
+But to get an explanation, and possibly to send this explanation to
+the user, or to the logger etc.
+
+In `quartet` we use explanations for it.
+
+> **Explanation** - any JS value(except undefined) you want that describes invalidation error.
+
+We use the second parameter of `v` to add effect of storing explanation, it can be either:
+- explanation;
+- function that returns explanation.
+
+We use them to collect error messages and errors into `v.explanation` array.
+
+_____________________________________________________________
+
+### Messages
+
+Sometimes we need only data to show to the user. And string explanation of the error is very usefull.
+
+_Example:_
 ```javascript
-  let a = 1
-  let setA = value => { a = value }
-  true || setA(10)
-  a // => 1
-  false || setA(10)
-  a // => 10
+const isValidPerson = v.and(
+  v('object!', 'Person data structure is not an object'),
+  {
+    name: v.and(
+      // required, checks if parent has such property
+      v('required', 'name field is absent'), 
+      v('string', 'Person name is not a string'),
+      v('not-empty', 'Person with empty name, really?')
+    ),
+    age: v.and(
+      v('required', 'age field is absent'),
+      v('safe-integer', 'Person age is not an integer number'),
+      v(v.min(18), 'Person has is not an appropriate age'),
+      v(v.max(140), `It was just a healthy food`)
+    )
+  }
+)
 ```
-We can add "validation" function as a last element of OR combinator - in such way it will be started only if all previous validators return false. And this validator must returns false - because it just used for side effect, but not for validation.
-Let's take an example, and rewrote explanation schema with using OR combinator for creating array of validation explanation.
+
+Let's use this schema to validate several persons
+
 ```javascript
-// This is not changed
-const emailRegex = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/
-const schema = {
-  username: v.and('string', v.min(3), v.max(30)), 
-  password: v.and('string', v.regex(/^[a-zA-Z0-9]{3,30}$/)), 
-  access_token: ['string', 'number'],
-  birthyear: v.and('safe-integer', v.min(1900), v.max(2013)), 
-  email: v.and('string', v.regex(emailRegex))
-}
-// Let's write a helper function expl(code: string): void
-let explanation = []
-function expl(code) {
-  // this is false validator with side effect
-  return function pushCodeToExplanation() {
-    explanation.push(code)
-    return false 
+v.clearContext() // or v()
+isValidPerson(null) // false
+console.log(v.explanation) // ['Person data structure is not an object']
+
+v.clearContext()
+isValidPerson({}) // false
+console.log(v.explanation)
+/*
+* [
+* 'Name field is absent',
+* 'age field is absent'
+* ]
+*/
+v() // same as v.clearContext()
+isValidPerson({ name: '', age: 969 })
+console.log(v.explanation)
+/**
+* [
+*   'Person with empty name, really?',
+*   'It was just a healthy food'
+* ]
+*/
+```
+
+We can calculate explanation based on the invalidValue and it's parents.
+
+_Example:_
+
+```javascript
+const isValidPerson = v.and(
+  v('object!', 'Person data structure is not an object'),
+  {
+    name: v.and(
+      v('required', 'name field is absent'),
+      v('string', 'Person name is not a string'),
+      v('not-empty', 'Person with empty name, really?')
+    ),
+    age: v.and(
+      v('required', 'age field is absent'),
+      v('safe-integer', 'Person age is not an integer number'),
+      v(v.min(18), age => `Your age: ${age} is to small`),
+      v(v.max(140), age => `Your age: ${age} is to big`)
+    )
   }
-}
+)
 
-const EXPLANATION = {
-  NOT_A_VALID_OBJECT: 'NOT_A_VALID_OBJECT',
-  USER_NAME: 'username', 
-  PASSWORD: 'password', 
-  ACCESS_TOKEN: 'access_token',
-  BIRTH_YEAR: 'birth_year',
-  EMAIL: 'email'
-}
+v() // same as v.clearContext()
+isValidPerson({ name: '', age: 969 })
+console.log(v.explanation)
+/**
+* [
+*   'Person with empty name, really?',
+*   'Your age: 969 is to big'
+* ]
+*/
+```
 
-const explanationSchema = {
-    username: [
-      // if it's false, next validator will be run
-      schema.username, 
-      // this is false validator with sideeffect of pushing code into explanation
-      expl(EXPLANATION.USER_NAME) 
-    ],  
-    password: [
-      schema.password,
-      expl(EXPLANATION.PASSWORD) // will be run if password doesn't follow the schema
-    ], 
-    access_token: [
-      schema.access_token,
-      expl(EXPLANATION.ACCESS_TOKEN)
-    ], 
-    birthyear: [
-      schema.birthyear,
-      expl(EXPLANATION.BIRTH_YEAR)
-    ], 
-    email: [
-      schema.email,
-      expl(EXPLANATION.EMAIL)
-    ]
+_____________________________________________________________
+
+### Errors
+
+The same way we use strings we can use objects as an explanation.
+
+
+
+```javascript
+// Util for calculating code errors.
+// If you want you can create your own type of errors.
+const invalidValueToError = code => invalidValue => ({
+  invalidValue,
+  code
+})
+```
+
+It will be usefull to add some error codes.
+We can use them to get messages sent to user and other.
+
+```javascript
+// Error Codes
+const CODE = {
+  PERSON_IS_NOT_AN_OBJECT: 'PERSON_IS_NOT_AN_OBJECT',
+  NAME_ABSENT: 'NAME_ABSENT',
+  NAME_IS_NOT_STRING: 'NAME_IS_NOT_STRING',
+  NAME_IS_EMPTY: 'NAME_IS_EMPTY',
+  AGE_ABSENT: 'AGE_ABSENT',
+  AGE_NOT_INTEGER: 'AGE_NOT_INTEGER',
+  AGE_TO_SMALL: 'AGE_TO_SMALL',
+  AGE_TO_BIG: 'AGE_TO_BIG'
+}
+```
+
+Schema with added using of `invalidValueToError` function that returns function that calculates error explanation.
+
+```javascript
+const isValidPerson = v.and(
+  v('object!', invalidValueToError(CODE.PERSON_IS_NOT_AN_OBJECT)),
+  {
+    name: v.and(
+      v('required',  invalidValueToError(CODE.NAME_ABSENT)),
+      v('string',    invalidValueToError(CODE.NAME_IS_NOT_STRING)),
+      v('not-empty', invalidValueToError(CODE.NAME_IS_EMPTY))
+    ),
+    age: v.and(
+      v('required',     invalidValueToError(CODE.AGE_ABSENT)),
+      v('safe-integer', invalidValueToError(CODE.AGE_NOT_INTEGER)),
+      v(v.min(18),      invalidValueToError(CODE.AGE_TO_SMALL)),
+      v(v.max(140),     invalidValueToError(CODE.AGE_TO_BIG))
+    )
   }
+)
+```
 
-v(explanationSchema)({
-  // wrong
-  username: 'an', 
-  password: '123456qQ',
-  // wrong
-  access_token: null, 
-  birthyear: 1996,
-  // wrong
-  email: '213' 
+Let's check some values and see what is stored in explanation
+
+_Not an object_
+
+```javascript
+v()
+isValidPerson(null)
+console.log(v.explanation)
+//[
+//  {
+//   invalidValue: null,
+//   code: 'PERSON_IS_NOT_AN_OBJECT'
+//  }
+//]
+```
+
+_required fields explanation_
+
+```javascript
+v()
+isValidPerson({})
+console.log(v.explanation)
+//[
+//  {
+//   invalidValue: undefined,
+//   code: 'NAME_ABSENT'
+//  },
+//  {
+//   invalidValue: undefined,
+//   code: 'NAME_ABSENT'
+//  }
+//]
+```
+
+_not valid values_
+
+```javascript
+v()
+isValidPerson({ age: 963, name: '' })
+console.log(v.explanation)
+//[
+//  {
+//   invalidValue: '',
+//   code: 'NAME_IS_EMPTY'
+//  },
+//  {
+//   invalidValue: 963,
+//   code: 'AGE_TO_BIG'
+//  }
+//]
+```
+
+_____________________________________________________________
+
+## All Together
+
+Rarely, but it's possible to use explanations and fixes at one time.
+For such goals there is `v.fromConfig` method. That takes config of the validation and returns validation function that has all setted properties.
+
+_Example:_
+
+This is still the same
+```javascript
+const invalidValueToError = code => invalidValue => ({
+  invalidValue,
+  code
 })
 
-// explanation was changed by side effect of last functions
-console.log(explanation) // => ['username', 'access_token', 'email']
+// Error Codes
+const CODE = {
+  PERSON_IS_NOT_AN_OBJECT: 'PERSON_IS_NOT_AN_OBJECT',
+  NAME_ABSENT: 'NAME_ABSENT',
+  NAME_IS_NOT_STRING: 'NAME_IS_NOT_STRING',
+  NAME_IS_EMPTY: 'NAME_IS_EMPTY',
+  AGE_NOT_VALID: 'AGE_NOT_VALID'
+}
+```
+Add using of `v.fromConfig`
+```javascript
+const isValidPerson = v.and(
+  v.fromConfig({
+    validator: 'object!',
+    // explanation if not object
+    explanation: invalidValueToError(CODE.PERSON_IS_NOT_AN_OBJECT), 
+    // If not valid store default fix (calculate default value)
+    default: () => ({ name: 'unknown' })
+  }),
+  {
+    // if several configs are passed, validations will be combined with `v.and`
+    name: v.fromConfig(
+      { 
+        validator: 'required',
+        default: 'a',
+        explanation: invalidValueToError(CODE.NAME_ABSENT)
+      },
+      {
+        validator: 'string',
+        default: 'b',
+        explanation: invalidValueToError(CODE.NAME_IS_NOT_STRING)
+      },
+      {
+        validator: 'not-empty',
+        default: 'c',
+        explanation: invalidValueToError(CODE.NAME_IS_EMPTY)
+      }
+    ),
+    age: v.fromConfig(
+      { 
+        validator: 'safe-integer',
+        filter: true,
+        explanation: invalidValueToError(CODE.AGE_NOT_VALID)
+      },
+      {
+        validator: v.min(18),
+        default: 18,
+        explanation: invalidValueToError(CODE.AGE_NOT_VALID)
+      },
+      {
+        validator: v.max(140),
+        default: 90,
+        explanation: invalidValueToError(CODE.AGE_NOT_VALID)
+      }
+    )
+  }
+)
+```
+
+_null object_
+
+```javascript
+v()
+const value = null
+const test1 = isValidPerson(value)
+const explanation = v.explanation
+const fixedValue = v.fix(value)
+
+console.log({
+  value,        // null
+  test1,        // false
+  explanation,  // [{ invalidValue: null, code: 'PERSON_IS_NOT_AN_OBJECT' }]
+  fixedValue    // { name: 'unknown' }
+})
+```
+
+_empty object_
+
+```javascript
+v()
+const value2 = {}
+const test2 = isValidPerson({})
+const explanation2 = v.explanation
+const fixedValue2 = v.fix(value2)
+
+console.log({
+  value2,  // {}
+  test2,   // false
+
+  // [
+  //  { invalidValue: undefined, code: 'NAME_ABSENT' },
+  //  { invalidValue: undefined, code: 'AGE_NOT_VALID' }
+  // ]
+  explanation2, 
+  fixedValue2   // { name: 'a' }
+})
+```
+
+_wrong types_
+
+```javascript
+v()
+const value3 = { age: '963', name: 1 }
+const test3 = isValidPerson(value3)
+const explanation3 = v.explanation
+const fixedValue3 = v.fix(value3)
+
+console.log({
+  value3, // { age: '963', name: 1 }
+  test3,  // false
+
+  //[
+  //  { invalidValue: 1,     code: 'NAME_IS_NOT_STRING' },
+  //  { invalidValue: '963', code: 'AGE_NOT_VALID' }
+  //]
+  explanation3,
+  fixedValue3    // { name: 'b' }
+})
+```
+
+_right type, wrong values_
+
+```javascript
+v()
+const value4 = { age: 963, name: '' }
+const test4 = isValidPerson(value4)
+const explanation4 = v.explanation
+const fixedValue4 = v.fix(value4)
+
+console.log({
+  value4,       // { age: 963, name: '' }
+  test4,        // false
+
+  //[
+  // { invalidValue: 1,     code: 'NAME_IS_NOT_STRING' },
+  // { invalidValue: '963', code: 'AGE_NOT_VALID' }
+  //]
+  explanation4,
+  fixedValue4   // 
+})
+```
+
+_Valid data_
+
+```javascript
+v()
+const value5 = { age: 21, name: 'Maksym' }
+const test5 = isValidPerson(value5)
+const explanation5 = v.explanation
+const fixedValue5 = v.fix(value5)
+
+console.log({
+  value4,       // { age: 21, name: 'Maksym' }
+  test4,        // true
+  explanation4, // []
+  fixedValue4   // { age: 21, name: 'Maksym' }
+})
+```
+
+_____________________________________________________________
+
+## Clear code
+
+> Clear code is code that you can easily understand and modify
+
+_____________________________________________________________
+
+### Readable
+
+There is some features that makes code more readable: 
+
+- object validation schema is the object with the same structure
+  as object that must be validated
+- text aliases for validation functions
+
+_____________________________________________________________
+
+### Modifiable
+
+There is some features that makes code more modifiable:
+- Easy to read sometimes means easy to modify.
+- methods names and structure - makes it easier to find place of change
+- custom validation functions - allows you to make any kind of validation
+
+_____________________________________________________________
+
+## Additional Possibilities
+
+There is also several additional possibilities:
+
+| Method                           | Description                        |
+|:--------------------------------:|:----------------------------------:|
+| `v.example(schema, ...examples)` | If examples are not valid, it will throw Error.<br> It can be used as documentation and testing of the shema.<br>Returns validation function, if examples are valid |
+| `v.validOr(schema, defaultValue)`| Returns function that takes `value`<br> and replace it by `defaultValue` if the `value` is not value |
+| `v.omitInvalidProps(objectSchema)` | Returns function that takes `value`. If value is not an object - returns unchanged.<br>If `value` is object - it tests all props that present in `objectSchema` and removes all props that is invalid |
+
+_____________________________________________________________
+
+## API Docs
+
+All methods described [here](https://github.com/whiteand/quartet/blob/master/API.md)
+
+_____________________________________________________________
+
+## Other Solutions
+
+There is plenty of good validation libraries, among them `ajv`, `joi`, `yup`, `type-contract`. They are beautiful and strong. You should use them, if you found that this solution - is not for you.
+
+_____________________________________________________________
+
+## Contacts
+<table>
+  <tr>
+    <td>Author</td>
+    <td>Andrew Beletskiy</td>
+  </tr>
+  <tr>
+    <td>Position</td>
+    <td>Frontend Developer, Adraba</td>
+  </tr>
+  <tr>
+    <td>Email</td>
+    <td>AndrewBeletskiy@gmail.com</td>
+  </tr>
+  <tr>
+    <td>Github</td>
+    <td><a href="https://github.com/whiteand">https://github.com/whiteand</a></td>
+  </tr>
+</table>
