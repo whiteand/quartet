@@ -73,7 +73,11 @@ From the definition we see that validation has only two possible results: "data 
 | Data is acceptable    | `true`   |
 | Data isn't acceptable | `false`  |
 
-Let's see how do we use `quartet` to achieve goals described above.
+Let's see how do we use `quartet` to achieve goals described above. But before we need to install library:
+
+```
+npm install -S quartet
+```
 
 _____________________________________________________________
 
