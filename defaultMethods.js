@@ -78,12 +78,12 @@ module.exports = () => ({
       f.explanation.push(explanation)
       return false
     }
-    function innerResetExplanation () {
+    function innerClearContext () {
       f.explanation = []
       return f
     }
-    innerResetExplanation()
-    f.resetExplanation = innerResetExplanation
+    innerClearContext()
+    f.clearContext = innerClearContext
     return f
   },
   regex (regex) {

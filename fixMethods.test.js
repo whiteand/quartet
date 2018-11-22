@@ -6,7 +6,7 @@ let v = quartet()
 describe('fix method', () => {
   test('empty fixes, must deep clone', () => {
     const a = { a: [{ b: 1 }] }
-    v.resetExplanation()
+    v.clearContext()
     const fixedA = v.fix(a)
     expect(a !== fixedA).toBe(true)
     expect(a.a !== fixedA.a).toBe(true)

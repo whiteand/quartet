@@ -90,7 +90,7 @@ const explanationSchema = v({
 }, EXPLANATION.NOT_A_VALID_OBJECT)
 
 const isValidWithExplanation = v(explanationSchema)
-v.resetExplanation() // or just v()
+v.clearContext() // or just v()
 const isValid = isValidWithExplanation({
   // wrong
   username: 'an', 
@@ -143,7 +143,7 @@ const obj = {
   // wrong
   email: ['wrong email', 'andrewbeletskiy@gmail.com', 'wrong email']
 }
-v.resetExplanation()
+v.clearContext()
 v(schema)(obj) // => false
 v.fix(obj)
 /*
@@ -154,7 +154,7 @@ v.fix(obj)
     emails: ['andrewbeletskiy@gmail.com']
   } // it's returns new fixed value
 */
-v.resetExplanation()
+v.clearContext()
 obj.emails = null
 v(schema)(obj)
 v.fix(obj) // => { username: 'unknown', password: '123456qQ', brithyear: 1996, emails: [] }
@@ -409,6 +409,7 @@ There are such registered validators by default:
 |     'null'     |               `x => x === null`                |
 |  'undefined'   |             `x => x === undefined`             |
 |     'nil'      |      `x => x === null || x === undefined`      |
+| 'boolean'      |        `x => typeof x === 'boolean'`           |
 |    'number'    |          `x => typeof x === 'number'`          |
 | 'safe-integer' |         `x => Number.isSafeInteger(x)`         |
 |    'finite'    |           `x => Number.isFinite(x)`            |
@@ -651,7 +652,7 @@ v(/^abc/)('  abcd') // => false
 Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
 
 ```javascript
-v.resetExplanation()
+v.clearContext()
 const isValid = v.explain("number", value => value);
 isValid(1) // => true
 v.explanation // => []
@@ -659,7 +660,7 @@ isValid(null)
 v.explanation // => [NULL]
 isValid(2)
 v.explanation // => [NULL]
-v.resetExplanation()
+v.clearContext()
 v.explanation // => []
 ```
 

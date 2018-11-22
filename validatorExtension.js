@@ -1,10 +1,10 @@
 module.exports = validator => {
-  validator.resetExplanation = function () {
+  validator.clearContext = function () {
     this.explanation = []
     return this
   }
 
-  validator.resetExplanation()
+  validator.clearContext()
 
   return validator.bind(validator)
 }

@@ -107,7 +107,7 @@ function newCompiler (settings) {
   let context
   context = function (schema, explanation) {
     if (schema === undefined) {
-      return context.resetExplanation()
+      return context.clearContext()
     }
     if (explanation === undefined) {
       validate.recursive(schema, 'schema must be not recursive data structure')
@@ -121,12 +121,12 @@ function newCompiler (settings) {
       : value
   }
   context.newCompiler = newCompiler
-  context.resetExplanation = () => {
+  context.clearContext = () => {
     context.explanation = []
     context[FIX_TREE] = fixTree(null, NODE_TYPES.EMPTY, { value: null })
     return context
   }
-  context.resetExplanation()
+  context.clearContext()
   return context
 }
 

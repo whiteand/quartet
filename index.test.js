@@ -585,7 +585,7 @@ describe('explain', () => {
     v2()
     expect(v2.explanation).toEqual([])
     expect(isValidNumber.explanation).toEqual(['1', '1'])
-    isValidNumber.resetExplanation()
+    isValidNumber.clearContext()
     expect(isValidNumber.explanation).toEqual([])
   })
   test('without explanation', () => {
@@ -600,21 +600,21 @@ describe('explain', () => {
     isValid('123')
     expect(v.explanation).toEqual([{ value: '123', parents: [] }])
   })
-  test('default explanation - resetExplanation method', () => {
+  test('default explanation - clearContext method', () => {
     const isValid = v().explain('number')
     isValid(null)
     expect(v.explanation).toEqual([{ value: null, parents: [] }])
-    v.resetExplanation() // The same as v()
+    v.clearContext() // The same as v()
     v.explain('number')(1)
     expect(v.explanation).toEqual([])
   })
-  test('default explanation - resetExplanation alias v()', () => {
+  test('default explanation - clearContext alias v()', () => {
     v()('number')(null)
     v()('number')(1)
     expect(v.explanation).toEqual([])
   })
   test('custom explanation - not function', () => {
-    v.resetExplanation()
+    v.clearContext()
     const isValidPerson = v({
       name: v.explain('string', 'wrong name'),
       age: v.explain('number', 'wrong age')
@@ -635,7 +635,7 @@ describe('explain', () => {
     expect(v.explanation).toEqual(['wrong name', 'wrong age'])
   })
   test('custom explanation - not function with alias v(schema, explanation)', () => {
-    v.resetExplanation()
+    v.clearContext()
     const isValidPerson = v({
       name: v('string', 'wrong name'),
       age: v('number', 'wrong age')
