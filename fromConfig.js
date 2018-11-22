@@ -39,7 +39,7 @@ const getValidatorAndDecorators = function (config) {
   return { decorators, validatorSchema }
 }
 
-module.exports = function (config) {
+const fromConfig = function (config) {
   if (isnt(config)('object')) {
     throw new TypeError('config must be an object')
   }
@@ -55,4 +55,11 @@ module.exports = function (config) {
   }
 
   return addExtension(validator)
+}
+
+module.exports = function (...configs) {
+  const validations = configs.map(fromConfig.bind(this))
+  return (value, ...parents) => {
+    return validations.every(f => f(value, ...parents))
+  }
 }
