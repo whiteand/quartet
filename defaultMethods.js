@@ -3,7 +3,7 @@ const { is, getType, isnt } = validate
 const { REST_PROPS, FIX_TREE } = require('./symbols')
 const ParentKey = require('./ParentKey.js')
 const clone = require('./clone')
-const { fixByTree, appendTree, NODE_TYPES, VALUE_KEY, isEmptyTree } = require('./fixTree')
+const { fixByTree, appendTree, FIX_TYPES, VALUE_KEY, isEmptyTree } = require('./fixTree')
 const fromConfig = require('./fromConfig.js')
 
 const addExtension = require('./validatorExtension')
@@ -361,7 +361,7 @@ module.exports = () => ({
         ? defaultValue(value, ...parents)
         : defaultValue
 
-      that[FIX_TREE] = appendTree(keys, NODE_TYPES.DEFAULT, {
+      that[FIX_TREE] = appendTree(keys, FIX_TYPES.DEFAULT, {
         defaultValue: actualDefaultValue
       }, that[FIX_TREE])
       return false
@@ -380,7 +380,7 @@ module.exports = () => ({
 
       const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
 
-      that[FIX_TREE] = appendTree(keys, NODE_TYPES.FUNCTION, {
+      that[FIX_TREE] = appendTree(keys, FIX_TYPES.FUNCTION, {
         fixFunction
       }, that[FIX_TREE])
 
@@ -398,7 +398,7 @@ module.exports = () => ({
 
       const keys = [VALUE_KEY, ...parents.map(e => e.key).reverse()]
 
-      that[FIX_TREE] = appendTree(keys.slice(0, -1), NODE_TYPES.FILTER, {
+      that[FIX_TREE] = appendTree(keys.slice(0, -1), FIX_TYPES.FILTER, {
         key: keys[keys.length - 1]
       }, that[FIX_TREE])
 

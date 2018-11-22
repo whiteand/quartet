@@ -164,26 +164,27 @@ describe('fix method', () => {
       a: [1, 2, '4', 3]
     })
     const { FIX_TREE } = require('./symbols')
-    const { VALUE_KEY, NODE_TYPES, appendTree } = require('./fixTree')
+    const { VALUE_KEY, FIX_TYPES, appendTree } = require('./fixTree')
 
     expect(v[FIX_TREE]).toEqual({
-      type: NODE_TYPES.EMPTY,
-      fix: null,
       children: {
-        [VALUE_KEY]: {
-          type: NODE_TYPES.EMPTY,
-          fix: null,
+        value: {
           children: {
             a: {
-              type: NODE_TYPES.DEFAULT,
-              fix: { defaultValue: [] },
-              children: {}
+              children: {},
+              fixes: [
+                {
+                  defaultValue: [],
+                  type: FIX_TYPES.DEFAULT
+                }
+              ]
             }
-          }
+          },
+          fixes: null
         }
-      }
+      },
+      fixes: null
     })
-    expect(appendTree([VALUE_KEY, 'a', 3], NODE_TYPES.DEFAULT, { defaultValue: 12 }, v[FIX_TREE])).toEqual(v[FIX_TREE])
     expect(v.hasFixes()).toBe(true)
     expect(v.fix({
       a: [1, 2, '4', 3]
@@ -195,5 +196,88 @@ describe('fix method', () => {
     v().default('number', str => str + '!')('123')
     expect(v.fix('123')).toBe('123!')
     expect(v.fix('1')).toBe('123!')
+  })
+
+  test('default after filter', () => {
+    v().default(v.filter('number'), 0)()
+    expect(v.fix('123')).toBe(undefined)
+  })
+  test('default after filter', () => {
+    v().filter(v.default('number', 0))('123')
+    expect(v.fix('123')).toBe(undefined)
+  })
+  test('default under filter', () => {
+    v()
+    const obj = {
+      a: [1,2,3,'4','5','6']
+    }
+    v({
+      a: v.filter(
+        v.arrayOf(v.default('number', 0))
+      )
+    })(obj)
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix(obj)).toEqual({})
+  })
+  test('filter under default', () => {
+    v()
+    const obj = {
+      a: [1,2,3,'4','5','6']
+    }
+    v({
+      a: v.default(
+        v.arrayOf(v.filter('number')),
+        []
+      )
+    })(obj)
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix(obj)).toEqual({ a: [] })
+  })
+  test('filter + filter', () => {
+    v()
+    const obj = {
+      a: [1,2,3,'4','5','6']
+    }
+    v({
+      a: v.arrayOf(v.filter(v.filter('number'))),
+    })(obj)
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix(obj)).toEqual({ a: [1,2,3] })
+  })
+  test('addFix under filter', () => {
+    v()
+    const obj = {
+      a: [1,2,3,'4','5','6']
+    }
+    v({
+      a: v.filter(
+        v.arrayOf(v.addFix('number', (_, { key, parent }) => { parent[key] = 1 }))
+      )
+    })(obj)
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix(obj)).toEqual({})
+  })
+  test('filter under addFix', () => {
+    v()
+    const obj = {
+      a: [1,2,3,'4','5','6']
+    }
+    v({
+      a: v.addFix(
+        v.arrayOf(v.filter('number')),
+        (_, { key, parent }) => { parent[key] = 1 }
+      )
+    })(obj)
+    expect(v.hasFixes()).toBe(true)
+    expect(v.fix(obj)).toEqual({ a: 1 })
+  })
+  test('multiple filters', () => {
+    v()
+    const obj = { a: '41', b: '3' }
+    v({
+      a: v.filter('number'),
+      b: v.filter('number')
+    })(obj)
+    expect(v.fix(obj)).toEqual({})
   })
 })

@@ -5,7 +5,7 @@ const getDefaultMethods = require('./defaultMethods')
 const ParentKey = require('./ParentKey')
 
 const { REST_PROPS, FIX_TREE } = require('./symbols')
-const { fixTree, NODE_TYPES } = require('./fixTree')
+const { fixTree, VALUE_KEY } = require('./fixTree')
 
 const compileFunction = (f, ctx) => {
   const bindedF = f.bind(ctx)
@@ -123,7 +123,7 @@ function newCompiler (settings) {
   context.newCompiler = newCompiler
   context.clearContext = () => {
     context.explanation = []
-    context[FIX_TREE] = fixTree(null, NODE_TYPES.EMPTY, { value: null })
+    context[FIX_TREE] = fixTree(null, { [VALUE_KEY]: null })
     return context
   }
   context.clearContext()

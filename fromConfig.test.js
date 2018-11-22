@@ -57,7 +57,6 @@ describe('fromConfig', () => {
     expect(isValid([1])).toBe(true)
     expect(v.explanation).toEqual([])
     expect(v.hasFixes()).toBe(false)
-
     expect(isValid([1, 2, 3, '4', 5])).toBe(false)
     expect(v.explanation).toEqual(['NaN'])
     expect(v.hasFixes()).toBe(true)

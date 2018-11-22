@@ -1,97 +1,150 @@
 const clone = require('./clone')
 const ParentKey = require('./ParentKey')
-const NODE_TYPES = {
-  EMPTY: Symbol('NODE_TYPES.EMPTY'),
-  DEFAULT: Symbol('NODE_TYPES.DEFAULT'),
-  FUNCTION: Symbol('NODE_TYPES.FUNCTION'),
-  FILTER: Symbol('NODE_TYPES.FILTER')
+const FIX_TYPES = {
+  DEFAULT: Symbol('FIX_TYPES.DEFAULT'),
+  FUNCTION: Symbol('FIX_TYPES.FUNCTION'),
+  FILTER: Symbol('FIX_TYPES.FILTER')
 }
 
 const VALUE_KEY = 'value'
 
-const IS_APPENDABLE = {
-  [NODE_TYPES.FILTER]: true
-}
-
 const FIXERS = {
-  [NODE_TYPES.DEFAULT]: ({ defaultValue }) => (value, { key, parent }, ...parents) => {
+  [FIX_TYPES.DEFAULT]: ({ defaultValue }) => (value, { key, parent }, ...parents) => {
     parent[key] = defaultValue
   },
-  [NODE_TYPES.FUNCTION]: ({ fixFunction }) => (value, ...parents) => {
+  [FIX_TYPES.FUNCTION]: ({ fixFunction }) => (value, ...parents) => {
     fixFunction(value, ...parents)
   },
-  [NODE_TYPES.FILTER]: (elements) => (value, ...parents) => {
-    const keysToBeRemoved = elements.map(({ key }) => key)
-    const [numbers, keys] = keysToBeRemoved.reduce(([num, keys], v) => {
+  [FIX_TYPES.FILTER]: (input) => (value, ...parents) => {
+    const { keys } = input
+    const [numbers, props] = keys.reduce(([num, props], v) => {
       if (typeof v === 'number') {
         num.push(v)
       } else {
-        keys.push(v)
+        props.push(v)
       }
-      return [num, keys]
+      return [num, props]
     }, [[], []])
     numbers.sort((a, b) => b - a)
     for (const index of numbers) {
       value.splice(index, 1)
     }
-    for (const key of keys) {
+    for (const key of props) {
       delete value[key]
     }
   }
 }
 
-function fixTree (fix = null, type = NODE_TYPES.EMPTY, children = {}) {
+function fixTree (fixes = null, children = {}) {
   return {
-    type,
-    fix,
+    fixes,
     children
   }
 }
-
+const RANGES = {
+  [FIX_TYPES.FUNC]: 0,
+  [FIX_TYPES.DEFAULT]: 0,
+  [FIX_TYPES.FILTER]: 1
+}
+const TO_CHILDREN = {
+  [FIX_TYPES.FILTER]: true
+}
+function getFixesToBeApplied (fixes) {
+  const range = RANGES[fixes[0].type]
+  switch (range) {
+    case 0:
+      return [fixes[fixes.length - 1]]
+    default:
+      return fixes
+  }
+}
 function _fixByTree (tree, value, ...parents) {
-  if (tree.fix === null) {
-    for (const [key, child] of Object.entries(tree.children)) {
+  if (!tree) return
+  const { fixes, children } = tree
+  if (!fixes && children) {
+    for (const [key, child] of Object.entries(children)) {
       _fixByTree(child, value[key], new ParentKey(value, key), ...parents)
     }
     return
   }
-  FIXERS[tree.type](tree.fix)(value, ...parents)
+  const fixesToBeApplied = getFixesToBeApplied(fixes)
+  let toChild = fixesToBeApplied.every(fix => TO_CHILDREN[fix.type])
+  if (toChild) {
+    for (const [key, child] of Object.entries(children)) {
+      _fixByTree(child, value[key], new ParentKey(value, key), ...parents)
+    }
+  }
+
+  for (const fix of fixesToBeApplied) {
+    FIXERS[fix.type](fix)(value, ...parents)
+  }
 }
 function isEmptyTree (tree) {
-  return tree.children[VALUE_KEY] === null
+  return !tree
+    || (
+      tree.children[VALUE_KEY] === null
+      && !tree.fixes
+    )
 }
 function fixByTree (tree, value) {
-  if (isEmptyTree(tree)) {
-    return value
+  if (isEmptyTree(tree)) return clone(value)
+  const outerValue = {
+    [VALUE_KEY]: clone(value)
   }
-  const valueContext = { [VALUE_KEY]: value }
-  _fixByTree(tree, valueContext)
-  return valueContext.value
+  _fixByTree(tree, outerValue)
+  return outerValue[VALUE_KEY]
+}
+
+function getNodeAndParentByPath (path, tree) {
+  let parents = []
+  let currentNode = tree
+
+  for (const key of path) {
+    if (!currentNode.children[key]) {
+      currentNode.children[key] = fixTree()
+    }
+    parents.push(currentNode)
+    currentNode = currentNode.children[key]
+  }
+
+  return { node: currentNode, parents }
+}
+const insertByRange = (type, fixNode, node, parents, data) => {
+  if (!node.fixes) {
+    node.fixes = [fixNode]
+    return true
+  }
+  if (node.fixes.some(e => RANGES[e.type] > RANGES[type])) {
+    node.fixes = [fixNode]
+    return true
+  }
+  return false
+}
+const appendTypeFix = {
+  [FIX_TYPES.DEFAULT]: (node, parents, data) => {
+    const fixNode = { type: FIX_TYPES.DEFAULT, ...data }
+    if (insertByRange(FIX_TYPES.DEFAULT, fixNode, node, parents, data)) return
+    
+    node.fixes = node.fixes.filter(e => e.type !== FIX_TYPES.DEFAULT)
+    node.fixes.push(fixNode)
+  },
+  [FIX_TYPES.FUNCTION]: (node, parents, data) => {
+    const fixNode = { type: FIX_TYPES.FUNCTION, ...data }
+    if (insertByRange(FIX_TYPES.FUNCTION, fixNode, node, parents, data)) return
+    node.fixes = node.fixes.filter(e => e.type !== FIX_TYPES.FUNCTION)
+    node.fixes.push(fixNode)
+  },
+  [FIX_TYPES.FILTER]: (node, parents, data) => {
+    const fixNode = { type: FIX_TYPES.FILTER, keys: [data.key] }
+    if (insertByRange(FIX_TYPES.FILTER, fixNode, node, parents, data)) return
+    node.fixes[0].keys.push(data.key)
+  }
 }
 
 function appendTree (path, type, data, tree) {
   const newTree = clone(tree)
-  let currentNode = newTree
-  for (const key of path) {
-    if (currentNode.fix !== null) return newTree
-    if (currentNode.children[key]) {
-      currentNode = currentNode.children[key]
-      continue
-    }
-    currentNode.children[key] = fixTree()
-    currentNode = currentNode.children[key]
-  }
-  if (currentNode.type === type) {
-    if (IS_APPENDABLE[type]) {
-      currentNode.fix.push(data)
-    } else {
-      currentNode.fix = data
-    }
-    return newTree
-  }
-  currentNode.type = type
-  currentNode.fix = IS_APPENDABLE[type] ? [data] : data
-  currentNode.children = {}
+  const { node, parents } = getNodeAndParentByPath(path, newTree)
+  appendTypeFix[type](node, parents, data)
   return newTree
 }
 
@@ -99,7 +152,7 @@ module.exports = {
   fixTree,
   fixByTree,
   appendTree,
-  NODE_TYPES,
+  FIX_TYPES,
   VALUE_KEY,
   isEmptyTree
 }
