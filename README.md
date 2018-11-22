@@ -1,18 +1,10 @@
-[![npm version](https://badge.fury.io/js/quartet.svg)](https://badge.fury.io/js/quartet)
-![npm](https://img.shields.io/npm/dw/quartet.svg)
-[![Build Status](https://travis-ci.org/whiteand/quartet.svg?branch=master)](https://travis-ci.org/whiteand/quartet)
-[![Known Vulnerabilities](https://snyk.io/test/github/whiteand/quartet/badge.svg?targetFile=package.json)](https://snyk.io/test/github/whiteand/quartet?targetFile=package.json)
-[![DeepScan grade](https://deepscan.io/api/teams/2512/projects/3631/branches/32004/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=2512&pid=3631&bid=32004)
-<a href='https://coveralls.io/github/whiteand/quartet?branch=master'><img src='https://coveralls.io/repos/github/whiteand/quartet/badge.svg?branch=master' alt='Coverage Status' /></a>
-[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/validation-quartet/support) [![Greenkeeper badge](https://badges.greenkeeper.io/whiteand/quartet.svg)](https://greenkeeper.io/)
-
 # Data Validation Practise for Frontend
 
-> If you want to know how to validate forms in Vue - this article, is not for you. You should use some standard Vue plugins such as: [vuelidate](https://monterail.github.io/vuelidate/)
+> If you want to know how to validate forms in Vue - this article, is not for you. You should use some standard Vue plugins such as [vuelidate](https://monterail.github.io/vuelidate/)
 >
-> My advice: validation schema must be placed in component that will submit the form.
+> My advice: validation schema must be placed in the component that will submit the form.
 
-We often create software that depends on data from some third side(ex. API calls, Backend, Parent Component, ...), you need to be ready that data you get can has any shape and content. So we need to validate data, that we take from other places.
+We often create software that depends on data from some third side(ex. API calls, Backend, Parent Component, ...), you need to be ready that data you get can have any shape and content. So we need to validate data, that we take from other places.
 
 _____________________________________________________________
 
@@ -34,7 +26,6 @@ _____________________________________________________________
   - [Messages](#messages)
   - [Errors](#errors)
 - [Additional Possibilities](#additional-possibilities)
-- [API Docs](#api-docs)
 - [Other Solutions](#other-solutions)
 - [Contacts](#contacts)
 
@@ -42,7 +33,7 @@ _____________________________________________________________
 
 ## Solution Requirements
 
-For almost all solution there is more or less usefull solutions.  And for our problem we set these goals to be achieved:
+For almost all solution there are more or less useful solutions.  And for our problem we set these goals to be achieved:
 
 - Validation of types(number, object, array, string, null, undefined,...)
 - Custom validation rules;
@@ -73,11 +64,7 @@ From the definition we see that validation has only two possible results: "data 
 | Data is acceptable    | `true`   |
 | Data isn't acceptable | `false`  |
 
-Let's see how do we use `quartet` to achieve goals described above. But before we need to install library:
-
-```
-npm install -S quartet
-```
+Let's see how do we use `quartet` to achieve goals described above.
 
 _____________________________________________________________
 
@@ -91,7 +78,7 @@ import quartet from 'quartet'
 const v = quartet()
 ```
 
-`v` - is a a function that transforms schema into validation function. It takes two arguments
+`v` - is a function that transforms schema into validation function. It takes two arguments
 1. Validation schema (required)
 2. Custom error (optional)
 
@@ -360,7 +347,7 @@ const isWorkerValid = v({
 })
 ```
 
-Lets validate some object with using of this validation function
+Let's validate some object with using of this validation function
 
 ```javascript
 const worker = {
@@ -401,7 +388,7 @@ const isValidLettersDict = v.and(
 console.log(isValidLettersDict(lowLettersDict))
 ```
 
-Lets check if keys corresponds values with using of
+Let's check if keys correspond values with using of
 custom validation function
 
 ```javascript
@@ -440,7 +427,7 @@ isArrayValid(arr) // true
 isArrayValid(invalidArrOfNumbers) // false
 ```
 
-Also we can combine array validation schema with object schemas
+Also, we can combine array validation schema with object schemas
 
 ```javascript
 const isValidPointArray = v.arrayOf({
@@ -454,7 +441,7 @@ isValidPointArray([
 ]) // true
 ```
 
-And in other way: object with array property:
+And another way: object with array property:
 
 ```javascript
 const student = {
@@ -477,7 +464,7 @@ What if some validation errors we can fix. For example, we can replace invalid d
 In `quartet` there are methods for such task. Main method is
 - `v.fix(invalidValue) => validValue`
 
-This method is used for applying all fixes that was collected during the validation. It doesn't change invalidValue, but returns new value with applied fixes.
+This method is used for applying all fixes that were collected during the validation. It doesn't change `invalidValue` but returns new value with applied fixes.
 
 Methods `v.default(schema, defaultValue)`, `v.filter(schema)` and `v.addFix(schema, fixFunction)` are decorators of validators. It means that they return new validation function that works exactly as passed schema, but with side effect of collecting of fixes.
 
@@ -559,13 +546,13 @@ isObjectValid(invalidObj)
 const validObj = v.fix(invalidObj) // { arr: [] }
 ```
 
-> Also there is `v.hasFixes` method: it returns `true` - if some fixes was collected, and ready to be applied. Returns `false` otherwise.
+> Also there is `v.hasFixes` method: it returns `true` - if some fixes were collected, and ready to be applied. Returns `false` otherwise.
 
 _____________________________________________________________
 
 ## Tracking
 
-Sometimes we need not only to check if value is not valid, 
+Sometimes we need not only to check if a value is not valid, 
 But to get an explanation, and possibly to send this explanation to
 the user, or to the logger etc.
 
@@ -573,9 +560,9 @@ In `quartet` we use explanations for it.
 
 > **Explanation** - any JS value(except undefined) you want that describes invalidation error.
 
-We use the second parameter of `v` to add effect of storing explanation, it can be either:
+We use the second parameter of `v` to add the effect of storing explanation, it can be either:
 - explanation;
-- function that returns explanation.
+- a function that returns explanation.
 
 We use them to collect error messages and errors into `v.explanation` array.
 
@@ -583,7 +570,7 @@ _____________________________________________________________
 
 ### Messages
 
-Sometimes we need only data to show to the user. And string explanation of the error is very usefull.
+Sometimes we need only data to show to the user. And string explanation of the error is very useful.
 
 _Example:_
 ```javascript
@@ -683,8 +670,8 @@ const invalidValueToError = code => invalidValue => ({
 })
 ```
 
-It will be usefull to add some error codes.
-We can use them to get messages sent to user and other.
+It will be useful to add some error codes.
+We can use them to get messages sent to the user and other.
 
 ```javascript
 // Error Codes
@@ -700,7 +687,7 @@ const CODE = {
 }
 ```
 
-Schema with added using of `invalidValueToError` function that returns function that calculates error explanation.
+Schema with added using of the `invalidValueToError` function that returns function that calculates error explanation.
 
 ```javascript
 const isValidPerson = v.and(
@@ -778,7 +765,7 @@ _____________________________________________________________
 ## All Together
 
 Rarely, but it's possible to use explanations and fixes at one time.
-For such goals there is `v.fromConfig` method. That takes config of the validation and returns validation function that has all setted properties.
+For such goals, there is `v.fromConfig` method. That takes the config of the validation and returns validation function that has all set properties.
 
 _Example:_
 
@@ -958,19 +945,19 @@ _____________________________________________________________
 
 ### Readable
 
-There is some features that makes code more readable: 
+There are some features that make the code more readable: 
 
 - object validation schema is the object with the same structure
-  as object that must be validated
+  as an object that must be validated
 - text aliases for validation functions
 
 _____________________________________________________________
 
 ### Modifiable
 
-There is some features that makes code more modifiable:
+There are some features that make the code more modifiable:
 - Easy to read sometimes means easy to modify.
-- methods names and structure - makes it easier to find place of change
+- methods names and structure - makes it easier to find the place of change
 - custom validation functions - allows you to make any kind of validation
 
 _____________________________________________________________
@@ -987,15 +974,9 @@ There is also several additional possibilities:
 
 _____________________________________________________________
 
-## API Docs
-
-All methods described [here](https://github.com/whiteand/quartet/blob/master/API.md)
-
-_____________________________________________________________
-
 ## Other Solutions
 
-There is plenty of good validation libraries, among them `ajv`, `joi`, `yup`, `type-contract`. They are beautiful and strong. You should use them, if you found that this solution - is not for you.
+There is plenty of good validation libraries, among them `ajv`, `joi`, `yup`, `type-contract`. They are beautiful and strong. You should use them if you found that this solution - is not for you.
 
 _____________________________________________________________
 
