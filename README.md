@@ -1,3 +1,11 @@
+[![npm version](https://badge.fury.io/js/quartet.svg)](https://badge.fury.io/js/quartet)
+![npm](https://img.shields.io/npm/dw/quartet.svg)
+[![Build Status](https://travis-ci.org/whiteand/quartet.svg?branch=master)](https://travis-ci.org/whiteand/quartet)
+[![Known Vulnerabilities](https://snyk.io/test/github/whiteand/quartet/badge.svg?targetFile=package.json)](https://snyk.io/test/github/whiteand/quartet?targetFile=package.json)
+[![DeepScan grade](https://deepscan.io/api/teams/2512/projects/3631/branches/32004/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=2512&pid=3631&bid=32004)
+<a href='https://coveralls.io/github/whiteand/quartet?branch=master'><img src='https://coveralls.io/repos/github/whiteand/quartet/badge.svg?branch=master' alt='Coverage Status' /></a>
+[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/validation-quartet/support) [![Greenkeeper badge](https://badges.greenkeeper.io/whiteand/quartet.svg)](https://greenkeeper.io/)
+
 # Data Validation Practise for Frontend
 
 > If you want to know how to validate forms in Vue - this article, is not for you. You should use some standard Vue plugins such as [vuelidate](https://monterail.github.io/vuelidate/)
@@ -26,6 +34,7 @@ _____________________________________________________________
   - [Messages](#messages)
   - [Errors](#errors)
 - [Additional Possibilities](#additional-possibilities)
+- [API Docs](#api-docs)
 - [Other Solutions](#other-solutions)
 - [Contacts](#contacts)
 
@@ -275,7 +284,7 @@ const isPrime = n => {
   if (n < 2) return false
   if (n === 2 || n === 3) return true
   if (n % 2 === 0 || n % 3 === 0) return false
-  for (let i = 5, j = 7; i * i <= n; i++, j++) {
+  for (let i = 5, j = 7; i * i <= n; i+=6, j+=6) {
     if (n % i === 0) return false
     if (n % j === 0) return false
   }
@@ -971,7 +980,13 @@ There is also several additional possibilities:
 | `v.example(schema, ...examples)` | If examples are not valid, it will throw Error.<br> It can be used as documentation and testing of the shema.<br>Returns validation function, if examples are valid |
 | `v.validOr(schema, defaultValue)`| Returns function that takes `value`<br> and replace it by `defaultValue` if the `value` is not value |
 | `v.omitInvalidProps(objectSchema)` | Returns function that takes `value`. If value is not an object - returns unchanged.<br>If `value` is object - it tests all props that present in `objectSchema` and removes all props that is invalid |
+| `v.throwError(schema, errorMessage)` | returns function that takes `value`.<br> Returns `value` if it's valid. Throws error otherwise. <br>Can be used in pipe of functions. |
 
+_____________________________________________________________
+
+## API Docs
+
+All methods and possibilities described [here](https://github.com/whiteand/quartet/blob/master/API.md)
 _____________________________________________________________
 
 ## Other Solutions
