@@ -2,7 +2,7 @@ const { isnt, is } = require('../validate')
 const { REST_PROPS } = require('../symbols')
 const ParentKey = require('../ParentKey')
 
-module.exports = function omitInvalidProps (objSchema, settings = { omitUnchecked: true }) {
+function validateParams (objSchema, settings) {
   if (isnt(settings)('object')) {
     throw new TypeError('settings must be object')
   }
@@ -11,46 +11,57 @@ module.exports = function omitInvalidProps (objSchema, settings = { omitUnchecke
       'settings.omitUnchecked must be boolean, or undefined'
     )
   }
-  const { omitUnchecked: omitUnchecked = true } = settings
-
+}
+function getFinalObjectSchema (objSchema, that) {
   while (isnt(objSchema)('object') && is(objSchema)('string')) {
-    objSchema = this.registered[objSchema]
+    objSchema = that.registered[objSchema]
   }
   if (isnt(objSchema)('object')) {
     throw new TypeError('Wrong object schema')
   }
+  return objSchema
+}
 
-  const restValidator = objSchema[REST_PROPS]
-    ? this(objSchema[REST_PROPS])
+function omitUncheckedOrUncheckedEmpty (obj, parents, finalObjSchema) {
+  const restValidator = finalObjSchema[REST_PROPS]
+    ? this(finalObjSchema[REST_PROPS])
     : null
+  const newObj = { ...obj }
+  for (const [key, innerSchema] of Object.entries(finalObjSchema)) {
+    const isValidProp = this(innerSchema)
+    if (!isValidProp(obj[key], new ParentKey(obj, key), ...parents)) {
+      delete newObj[key]
+    }
+  }
+
+  if (!restValidator) return newObj
+
+  const checkedProps = new Set(Object.keys(finalObjSchema))
+  const notCheckedProps = Object.entries(newObj).filter(([propName]) => !checkedProps.has(propName))
+
+  for (const [key, value] of notCheckedProps) {
+    if (!restValidator(value, new ParentKey(obj, key), ...parents)) {
+      delete newObj[key]
+    }
+  }
+
+  return newObj
+}
+
+module.exports = function omitInvalidProps (objSchema, settings = { omitUnchecked: true }) {
+  validateParams(objSchema, settings)
+  const { omitUnchecked: omitUnchecked = true } = settings
+  const finalObjSchema = getFinalObjectSchema(objSchema, this)
   return (obj, ...parents) => {
     if (isnt(obj)('object')) {
       return obj
     }
 
-    if (!omitUnchecked || restValidator) {
-      const newObj = { ...obj }
-      for (const [key, innerSchema] of Object.entries(objSchema)) {
-        const isValidProp = this(innerSchema)
-        if (!isValidProp(obj[key], new ParentKey(obj, key), ...parents)) {
-          delete newObj[key]
-        }
-      }
-
-      if (!restValidator) return newObj
-
-      const checkedProps = new Set(Object.keys(objSchema))
-      const notCheckedProps = Object.entries(newObj).filter(([propName]) => !checkedProps.has(propName))
-
-      for (const [key, value] of notCheckedProps) {
-        if (!restValidator(value, new ParentKey(obj, key), ...parents)) {
-          delete newObj[key]
-        }
-      }
-
-      return newObj
+    if (!omitUnchecked || finalObjSchema[REST_PROPS]) {
+      return omitUncheckedOrUncheckedEmpty.bind(this)(obj, parents, finalObjSchema)
     }
-    return Object.entries(objSchema)
+
+    return Object.entries(finalObjSchema)
       .filter(([key, schema]) => {
         const value = obj[key]
         return this(schema)(value, new ParentKey(obj, key), ...parents)

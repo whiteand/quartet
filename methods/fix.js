@@ -4,6 +4,5 @@ const clone = require('../clone')
 
 module.exports = function fix (value) {
   const initialValue = clone(value)
-  const fixedValue = fixByTree(this[FIX_TREE], initialValue)
-  return fixedValue
+  return fixByTree(this[FIX_TREE], initialValue)
 }
