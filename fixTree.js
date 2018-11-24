@@ -51,12 +51,11 @@ const TO_CHILDREN = {
 }
 function getFixesToBeApplied (fixes) {
   const range = RANGES[fixes[0].type]
-  switch (range) {
-    case 0:
-      return [fixes[fixes.length - 1]]
-    default:
-      return fixes
-  }
+  const lastFix = [fixes[fixes.length - 1]]
+  const isUniq = range === 0
+  return isUniq
+    ? lastFix
+    : fixes
 }
 function _fixByTree (tree, value, ...parents) {
   if (!tree) return
@@ -80,10 +79,10 @@ function _fixByTree (tree, value, ...parents) {
   }
 }
 function isEmptyTree (tree) {
-  return !tree
-    || (
-      tree.children[VALUE_KEY] === null
-      && !tree.fixes
+  return !tree ||
+    (
+      tree.children[VALUE_KEY] === null &&
+      !tree.fixes
     )
 }
 function fixByTree (tree, value) {
@@ -124,7 +123,7 @@ const appendTypeFix = {
   [FIX_TYPES.DEFAULT]: (node, parents, data) => {
     const fixNode = { type: FIX_TYPES.DEFAULT, ...data }
     if (insertByRange(FIX_TYPES.DEFAULT, fixNode, node, parents, data)) return
-    
+
     node.fixes = node.fixes.filter(e => e.type !== FIX_TYPES.DEFAULT)
     node.fixes.push(fixNode)
   },

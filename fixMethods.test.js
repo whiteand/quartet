@@ -164,7 +164,7 @@ describe('fix method', () => {
       a: [1, 2, '4', 3]
     })
     const { FIX_TREE } = require('./symbols')
-    const { VALUE_KEY, FIX_TYPES, appendTree } = require('./fixTree')
+    const { FIX_TYPES } = require('./fixTree')
 
     expect(v[FIX_TREE]).toEqual({
       children: {
@@ -209,7 +209,7 @@ describe('fix method', () => {
   test('default under filter', () => {
     v()
     const obj = {
-      a: [1,2,3,'4','5','6']
+      a: [1, 2, 3, '4', '5', '6']
     }
     v({
       a: v.filter(
@@ -222,7 +222,7 @@ describe('fix method', () => {
   test('filter under default', () => {
     v()
     const obj = {
-      a: [1,2,3,'4','5','6']
+      a: [1, 2, 3, '4', '5', '6']
     }
     v({
       a: v.default(
@@ -236,18 +236,18 @@ describe('fix method', () => {
   test('filter + filter', () => {
     v()
     const obj = {
-      a: [1,2,3,'4','5','6']
+      a: [1, 2, 3, '4', '5', '6']
     }
     v({
-      a: v.arrayOf(v.filter(v.filter('number'))),
+      a: v.arrayOf(v.filter(v.filter('number')))
     })(obj)
     expect(v.hasFixes()).toBe(true)
-    expect(v.fix(obj)).toEqual({ a: [1,2,3] })
+    expect(v.fix(obj)).toEqual({ a: [1, 2, 3] })
   })
   test('addFix under filter', () => {
     v()
     const obj = {
-      a: [1,2,3,'4','5','6']
+      a: [1, 2, 3, '4', '5', '6']
     }
     v({
       a: v.filter(
@@ -260,7 +260,7 @@ describe('fix method', () => {
   test('filter under addFix', () => {
     v()
     const obj = {
-      a: [1,2,3,'4','5','6']
+      a: [1, 2, 3, '4', '5', '6']
     }
     v({
       a: v.addFix(
