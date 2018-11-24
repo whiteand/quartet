@@ -428,77 +428,79 @@ There are such registered validators by default:
 
 So you can see that we shouldn't register own validators - if they are present by default. So example above can be rewritten without registering any of validators.
 
-# Methods
+# API
 
 ## Types
-```javascript
-type Schema = function|string|object|Array`
-type Parent = { key: string|number, parent: object|array }
-type Validator = function(
-  value: any,
-  parent: Parent,
-  grandParent: Parent,
-  grandGrandParent: Parent,
-  ...
-) => boolean
-type FromValidable<T> = function(
-  value: any,
-  parent: Parent,
-  grandParent: Parent,
-  grandGrandParent: Parent,
-  ...
-) => T
+
+```typescript
+type KeyParent = {
+  key: number | string;
+  parent: object | any[];
+}
+
+type FromParams<T> = (value: any, ...keyParents: KeyParent[]) => T;
+type Validator = (value: any, ...keyParents: KeyParent[]) => boolean;
+
+interface ObjectSchema {
+  [property: string]: Schema;
+}
+interface AlternativeSchema extends Array<Schema> {
+}
+type Schema = string | AlternativeSchema | ObjectSchema | Validator;
+
+type Explanation = any | FromParams<any>;
+
+type SchmaDict = { [name: string]: Schema }
+
+interface CompilerSettings {
+  registered: SchemaDict,
+  allErrors: boolean
+}
 ```
 
-### `v.registered :: Object<schemaName, schema: Schema>`
-returns object with registered schemas
+## Props
 
-### `v.register :: (AdditionalSchemas: object<string, Schema>) => quartet instance`
-returns new quartet instance with added aliases for validators.
+### `v.explanation: any[]`
 
-### `v.required :: (...requiredProps: string) => (obj: object) => boolean`
-returns true if `obj` has all `requiredProps`.
+Contains explanation pushed during validation process.
+
+### `v.registered: SchemaDict`
+
+Returns dictionary of all registered validators
+
+### `v.allErrors: boolean`
+
+Returns `true`, if validation process will be finished after first invalidation error.
+
+Retruns `false` otherwise.
+
+## Methods
+
+### `v.addFix: (schema: Schema, fixFunction: FromParams<void>) => Validator`
+
+Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
 
 ```javascript
-  v.required('a', 'b')({a: 1, b: 2}) // => true
-  v.required('a', 'b')({a: 1}) // => false
+ const arr = [1,2,'3',4,5]
+ v.clearContext()
+ const toNumber = (v, { key, parent }) => { // changes value to number
+   parent[key] = Number(v) // we need to change by parent reference in order to mutate fix result
+ }
+ v(v.arrayOf(v.addFix('number', toNumber))(obj) // => false
+ console.log(v.hasFixes()) // => true
+ console.log(v.fix(obj)) // => [1,2,3,4,5]
 ```
 
-### `v.requiredIf :: (isRequired: boolean) => Validator`
+### `v.and: (...schemas: Schema[]) => Validator`
 
-if `isRequired` is truthy, validator returns true only if parent has such property.
+Returns validator that returns `true` only if validated value corresponds to **ALL** `schemas`.
 
-```javascript
-const aRequired = v({
-  a: v.requiredIf(true)
-});
-const aNotRequired = v({
-  a: v.requiredIf(false)
-});
-aRequired({ a: 1 }) // => true
-aNotRequired({ a: 1 }) // => true
-aNotRequired({}) // => true
-aRequired({ a: 1 }) // => false
-```
+### `v.arrayOf: (elementSchema: Schema) => Validator`
 
-### `v.requiredIf :: (schema: Schema) => Validator(value, ...parents)`
-if `v(schema)(value, ...parents)` returns true, then this field treated as required.
+Takes schema of an element of the array, and returns validator of array value. That return `true` only if value is array and **ALL** elements correspond to `elementSchema`
 
 ```javascript
-const hasParentHasB = (_, { parent }) => parent.hasB
-const bObjValidator = v({
-  hasB: "boolean",
-  b: v.requiredIf(getParentHasB) // if hasB is true, then b must be required
-})
-bObjValidator({ hasB: true, b: 1 }) // => true
-bObjValidator({ hasB: false }) // => true
-bObjValidator({ hasB: true }) // => false
-```
-
-### `v.arrayOf :: (schema: Schema) => (arr: any) => boolean`
-returns true if `arr` is Array and all elements of `arr` are valid
-
-```javascript
+v.arrayOf('number')(null) // => false
 v.arrayOf('number')([1,2,3,3,4,5]) // => true
 v.arrayOf('number')([1,'2',3,'3',4,5]) // => false
 
@@ -506,9 +508,35 @@ v.arrayOf(isPrime)([1,2,3,4,5,6,7]) // => false
 v.arrayOf(isPrime)([2,3,5,7]) // => true
 ```
 
-### v.dictionaryOf :: (schema: Schema) => (dict: object<key, value>) => boolean`
+### `v.default: (schema: Schema, defaultValue: any|FromParams<any>) => Validator`
 
-returns true if all values stored in `dict` are valid using `schema`.
+Returns new validator that returns `true` if value correspond to schema, and `false` otherwise. But it adds a sideffect of storing the place of the invalid data and `defaultValue`(just a value or calculated based on invalid data). After calling `v.fix` invalidData in the stored placed will be replaced with `defaultValue`(or `defaultValue(value, ...parents)` if `defaultValue` is a function)
+
+```javascript
+ const obj = {
+   arr: [1,2,'3',4,5]
+   obj: {
+     a: 1, // must be removed
+     b: 2, // not removed
+     c: '3', // must be removed
+     d: 'string' // not removed
+   }
+ }
+ v.clearContext()({
+  arr: v.arrayOf(v.default('number', 0)),
+  obj: {
+    a: v.default('string', ''),
+    ...v.rest(v.default('number'))
+    d: v.default('number', 0)
+  }
+ })(obj) // => false
+ console.log(v.hasFixes()) // => true
+ console.log(v.fix(obj)) // => { arr: [1,2,0,4,5], obj: { a: '', b: 2, c: 0, d: 'string' } }
+```
+
+### `v.dictionaryOf: (elementSchema: Schema) => Validator`
+
+returns true if all values stored in `dict` correspond to `elementSchema`.
 
 ```javascript
 const isNumberDict = v.dictionaryOf('number')
@@ -523,50 +551,220 @@ const isNumberDict = v.dictionaryOf('number')
 const isNumberDict2 = v({ ...v.rest('number') })
 ```
 
-### `v.rest :: (schema: Schema) => object`
+### `v.enum: (...values: any) => Validator`
 
-Returns schema that can be spreaded into object validation schema to check other properties.
+Returns validator, that returns `true` only if validated value is one of `values`.
 
 ```javascript
-const aAndStrings = v({
-  a: 'number', 
-  ...v.rest('string')
-})
-aAndString({
-  a: 1
-}) // => true
-aAndString({
-  a: 1,
-  b: '1'
-}) // => true
-aAndString({
-  a: 1,
-  b: 2
-}) // => false
+v.enum(1,2,'3')(1)   // true
+v.enum(1,2,'3')(2)   // true
+v.enum(1,2,'3')('3') // true
+v.enum(1,2,'3')(3)   // false
 ```
 
-### v.keys :: (schema: Schema) => (dict: object<key, value>) => boolean`
+### `v.example: (schema: Schema, ...validExamples: any[]) => Validator`
 
-returns true if all keys used in `dict` are valid using `schema`
+If examples are not valid by schema - it will throw an erorr.
+It will return schema otherwise.
 
 ```javascript
-const isAbcDict = v.keys(key => ['a', 'b', 'c'].includes(key))
+v.example('number', 1,2,3,4, '4', '5', '6')
+//> throws error
+
+v.example(['number', 'string'], 1,2,3,4, '4', '5', '6')
+//> returns schema ['number', 'string']
+```
+
+It can be use as test for schema, and for documentation:
+
+```javascript
+  const personValidator = v.example(
+    {
+      name: v.and('not-empty', 'string'),
+      age: v.and('positive', 'number'),
+      position: 'string'
+    },
+    {
+      name: 'Max Karpenko',
+      age: 30,
+      position: 'Frontend Developer'
+    }
+  )
+  personValidator({
+    name: 'Max Karpenko',
+    age: 30,
+    position: 'Frontend Developer'
+  }) // => true
+```
+
+### `v.explain: (schema: Schema, explanation: Explanation) => Validator`
+
+Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
+
+```javascript
+v.clearContext()
+const isValid = v.explain("number", value => value);
+isValid(1) // => true
+v.explanation // => []
+isValid(null)
+v.explanation // => [NULL]
+isValid(2)
+v.explanation // => [NULL]
+v.clearContext()
+v.explanation // => []
+```
+
+This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(schema, explanation)` if explanation is not undefined.
+
+### `v.filter: (schema: Schema) => Validator`
+
+Takes validator and returns new validator with side effect: if value is invalid - it will be removed with using `v.fix` from parent (object or array)
+
+```javascript
+ const obj = {
+   arr: [1,2,'3',4,5]
+   obj: {
+     a: 1, // must be removed
+     b: 2, // not removed
+     c: '3', // must be removed
+     d: 'string' // not removed
+   }
+ }
+ v.clearContext()({
+  arr: v.arrayOf(v.filter('number')),
+  obj: {
+    a: v.filter('string'),
+    d: v.filter('string')
+    ...v.rest(v.filter('number'))
+  }
+ })(obj) // => false
+ console.log(v.hasFixes()) // => true
+ console.log(v.fix(obj)) // => { arr: [1,2,4,5], obj: { b: 2, d: 'string' } }
+```
+
+### `v.fix: (value: any) => any`
+
+It gets all fixes stored by fix methods(`default`, `filter`, `addFix`) and applies it on `value`. Returns new value with all fixes applied. It's pure function.
+
+```javascript
+const obj = { a: 'not a number' }
+
+v() // same as v.clearContext()
+
+v({
+  a: v.default('number', 0)
+})(obj)
+
+v.fix(obj) // returns { a: 0 }
+```
+
+
+### `v.fromConfig: (config: Config) => Validator`
+
+```javascript
+@typedef Config {{
+  validator: Schema, 
+  explanation?: any|function(): any // not required
+  examples?: []any,
+  // one of the next fix params
+  default: any,
+  filter: any,
+  fix: function(invalidValue, { key, parent}, ...): void // mutate parent to fix error
+}}
+```
+
+`fromConfig` is used to set validator, examples, explanation and fix at one config.
+
+```javascript
+const arr = [1, 2, 3, 4, '5', '6', 7]
+const isElementValid = v.fromConfig({
+  validator: 'number',
+  explanation: (value, { key }) => `${key}th element is not a number: ${JSON.stringify(value)}`,
+  fix: (invalidValue, { key, parent }) => {
+    parent[key] = Number(invalidValue)
+  }
+})
+
+const isArrValid = v.fromConfig({
+  validator: v.arrayOf(isElementValid),
+  explanation: 'Not valid array'
+})
+
+v()
+
+isArrValid(arr) // => false
+
+console.log(v.hasFixes()) // => true
+console.log(v.explanation) // => [ '4th element is not a number: "5"','5th element is not a number: "6"', 'Not valid array' ]
+console.log(v.fix(arr)) // => [ 1, 2, 3, 4, 5, 6, 7 ]
+```
+
+### `v.hasFixes: () => boolean`
+
+Returns `true` if some fixes was stored by fix methods(`filter`, `default`, `addFix`).
+
+```javascript
+const isValid = v({
+  a: v.default('number', 0)
+})
+
+const validObj = { a: 123 }
+const obj = { a: 'not a number' }
+
+v() // same as v.clearContext()
+isValid(validObj) // => true
+v.hasFixes() // => false
+
+v() 
+isValid(obj)
+v.hasFixes() // => true
+v.fix(obj) // returns { a: 0 }
+```
+
+### `v.keys: (keySchema: Schema) => Validator`
+
+returns `true` if all **keys** used in `dict` correspond to `keySchema`
+
+```javascript
+const isAbcDict = v.keys(v.enum('a', 'b', 'c'))
 isNumberDict({a: 1, b: 2, c: 3}) // => true
 isNumberDict({a: 1, b: 2, c: '3'}) // => true
 isNumberDict({a: 1, b: 2, c: '3', d: '4'}) // => false
 ```
 
-### `v.throwError :: (schema: Schema, errorMessage: string|FromValidable<string>) => FromValidable<any>`
+### `v.max: (maxValue: number) => Validator`
 
-`throwError` returns value if it's valid. Throw TypeError if it isn't.  if `errorMessage` is `string` then it will be used as error message. If it's a function then errorMessage(value, parent: Parent, grandParent: Parent, ...) will be used as error Message.
+If value is array, returns true only if
+
+`value.length <= maxValue`
+
+If value is string, returns true only if
+
+`value.length <= maxValue`
+
+If value is number, returns true only if
+
+`value <= maxValue`
 
 ```javascript
-const userId = 
-v.throwError('number', 'userId must be a number')('123') // => throws new Error
-v.throwError('number', 'userId must be a number')(123) // => 123
+v.max(5)(6) // => false
+v.max(5)(5) // => true
+v.max(5)(4) // => true
+
+v.max(5)([1,2,3,4,5,6]) // => false
+v.max(5)([1,2,3,4,5]) // => true
+v.max(5)([1,2,3,4]) // => true
+
+v.max(5)('123456') // => false
+v.max(5)('12345') // => true
+v.max(5)('1234') // => true
+
+const isValidName = v(v.and('string', v.min(8), v.max(16)))
+isValidName('andrew') // => false
+isValidName('andrew beletskiy') // => true
 ```
 
-### `v.min :: (minValue: number) => value => boolean`
+### `v.min: (minValue: number) => Validator`
 
 If value is array, returns true only if
 
@@ -605,76 +803,30 @@ v.min(5)('12345') // => true
 v.min(5)('12346') // => true
 ```
 
-### `v.max :: (maxValue: number) => value => boolean`
+### `v.newCompiler: (settings?: CompilerSettings) => Compiler`
 
-If value is array, returns true only if
-
-`value.length <= maxValue`
-
-If value is string, returns true only if
-
-`value.length <= maxValue`
-
-If value is number, returns true only if
-
-`value <= maxValue`
+Returns new instance of validator compiler with custom aliases
 
 ```javascript
-v.max(5)(6) // => false
-v.max(5)(5) // => true
-v.max(5)(4) // => true
-
-v.max(5)([1,2,3,4,5,6]) // => false
-v.max(5)([1,2,3,4,5]) // => true
-v.max(5)([1,2,3,4]) // => true
-
-v.max(5)('123456') // => false
-v.max(5)('12345') // => true
-v.max(5)('1234') // => true
-
-const isValidName = v(v.and('string', v.min(8), v.max(16)))
-isValidName('andrew') // => false
-isValidName('andrew beletskiy') // => true
+const v2 = v.newCompiler({
+  registered: {
+    number2: v => Number.isSafeInteger(v)
+  },
+  allErrors: true
+})
+v2('number')(1) // throws error
+v2('number2')(1) // => true
 ```
 
-### `v.regex :: (regex: RegExp) => (str: any) => boolean`
+### `v.not: (schema: Schema) => Validator`
 
-returns regex.test(str)
+Returns validator, that returns `true` only if value **DOESN'T** correspond to schema.
 
-```javascript
-v(/abc/)('abcd') // => true
-v(/abc/)('  abcd') // => true
-v(/^abc/)('  abcd') // => false
-```
+### `v.omitInvalidItems: (itemSchema: Schema) => (collection: any) => any`
 
-### `v.explain :: (schema: Schema, explanation: any|function) => Validator`
+Takes schema and returns collection transformator, that removes all items that **do not** correspond to `schema`.
 
-Returns validator with side-effect of changing `v.explanation`. If validation failed, `explanation` or `explanation(value, ...)` will be pushed into `v.explanation` array. 
-
-```javascript
-v.clearContext()
-const isValid = v.explain("number", value => value);
-isValid(1) // => true
-v.explanation // => []
-isValid(null)
-v.explanation // => [NULL]
-isValid(2)
-v.explanation // => [NULL]
-v.clearContext()
-v.explanation // => []
-```
-
-This method is not so convenient because compiler instance(`v`) takes second parameter of explanation and returns `v.explain(schema, explanation)` if explanation is not undefined.
-
-### not :: (schema: Schema) => Validator`
-
-Returns opposite validator.
-
-### `omitInvalidItems :: (schema) => (collection: Array|object<key, value>) => Array|object<key, value>`
-
-If `collection` is array, the returs new array without invalid values.
-
-If `collection` is object, then returns new object without invalid values.
+If collection is not an **array** or an **object-dictionary** it returns value without changes.
 
 ```javascript
 const arr = [1, "2", 3, "4", 5];
@@ -693,10 +845,9 @@ const onlyNumberProperties = v.omitInvalidItems("number")(
 onlyNumberProperties(invalidNumberDict) // => { a: 1, c: 3 }
 ```
 
+### `v.omitInvalidProps: (objSchema: ObjectSchema|string, settings?: { omitUnchecked: boolean }) => (object: any) => any`
 
-### `v.omitInvalidProps :: (objSchema: object|string, { omitUnchecked: boolean = true }) => object => object`
-
-Removes invalid properties. If keepUnchecked is falsy value, function will keep unchecked properties of object.
+Removes invalid properties. If `omitUnchecked` is falsy value, function will keep unchecked properties of object.
 
 ```javascript
 const removeInvalidProps = v.omitInvalidProps({
@@ -722,32 +873,105 @@ removeInvalidProps({
   unchecked: 32
 }) // => { num: 123, arrNum: [123], unchecked: 32 }
 ```
+### `v.parent: (parentSchema: Schema) => Validator`
 
-### `v.validOr :: (schema: Schema, defaultValue: any) => value => value`
-Returns `value` if it's valid. Returns `defaultValue` otherwise.
-
-### `v.newCompiler :: (settings: { registered: Object<name, schema>, allErrors: boolean }) => quartet instance`
-Returns new instance of validator generator with custom aliases
-
-### `v.enum :: (primitiveValue, primitiveValue2 ,...) => Validator`
-Returns validator, that returns true only of value isone of primitiveValues.
-
-### `v.parent :: (schema: Schema) => Validator`
-Checks is parent of the value is valid.
+Returns validator, that returns `true` only if parent of the validated value correspond to `schema`.
 
 ```javascript
-  // example above can be rewritten with using of parent method
-  
-  const bObjValidator = v({
-    hasB: "boolean",
-    b: v.requiredIf(v.parent(p => p.hasB)) // if hasB is true, then b must be required
-  })
-  bObjValidator({ hasB: true, b: 1 }) // => true
-  bObjValidator({ hasB: false }) // => true
-  bObjValidator({ hasB: true }) // => false
+const funcPair = { x: 3, xSquared: 9 }
+v({
+  x: 'number',
+  xSqured: v.parent(parent => parent.x ** 2 === parent.xSquared) // Check if 
+})(funcPair) // => true
 ```
 
-### `v.withoutAdditionalProps :: (schema: object|string) => Validator`
+### `v.regex: (regex: RegExp) => Validator`
+
+Returns validator, that returns `regex.test(validatedValue)`
+
+```javascript
+v(/abc/)('abcd') // => true
+v(/abc/)('  abcd') // => true
+v(/^abc/)('  abcd') // => false
+```
+
+### `v.register: (schemasToBeRegistered: SchemaDict) => Compiler`
+
+Returns new Compiler with added registered validators.
+
+```javascript
+const v2 = v.register({ numberOrString: ['number', 'string']})
+
+v2('numberOrString')(123) // => true
+v2('numberOrString')('123') // => true
+```
+
+### `v.required: (...props: string[]) => Validator`
+
+Takes required properties, and returns Validator that returns `true` only if all properties from `props` are present in the validated object. (Using `Object.prototype.hasOwnProperty`)
+
+```javascript
+v.required('a','b')({}) // => false
+v.required('a','b')({ a: 1 }) // => false
+v.required('a','b')({ b: 2}) // => false
+v.required('a','b')({ a: 1, b: 2}) // => true
+```
+
+### `v.requiredIf: (isRequired: boolean|Schema) => Validator`
+
+Returns `true` if value is not requried, returns `true`. If value required, returns parent.hasOwnProperty(valueProp).
+
+Value treated as required if `isRequired === true`, or `value` correspond to `isRequired` schema.
+
+```javascript
+const obj = { hasA: true, a: 'present' }
+const isObjValid = v({
+  hasA: 'boolean',
+  a: v.requiredIf(v.parent(p => p.hasA))
+})
+isObjValid(obj) // => true
+isObjValid({ hasA: true }) // => false
+isObjValid({ hasA: false }) // => true
+```
+
+### `v.rest: (restPropsSchema: Schema) => ObjectSchema`
+
+Returns schema that can be spreaded into object validation schema to check other properties.
+
+```javascript
+const aAndStrings = v({
+  a: 'number', 
+  ...v.rest('string')
+})
+aAndString({
+  a: 1
+}) // => true
+aAndString({
+  a: 1,
+  b: '1'
+}) // => true
+aAndString({
+  a: 1,
+  b: 2
+}) // => false
+```
+
+### `v.throwError: (schema: Schema, errorMessage: string|FromParams<string>) => (value: any) => any`
+
+Returns transformation function, that returns `value` if it correspond to `schema`. Throws error with message `errorMessage`(or `errorMessage(invalidValue, ...parents)`). Can be used in pipes of functions.
+
+```javascript
+const userId = 
+v.throwError('number', 'userId must be a number')('123') // => throws new Error
+v.throwError('number', 'userId must be a number')(123) // => 123
+```
+
+### `v.validOr: (schema: Schema, defaultValue: any) => (value: any) => any`
+
+Returns transformation function that returns `value` if it correspond to schema. Returns `defaultValue` otherwise.
+
+### `v.withoutAdditionalProps: (schema: ObjectSchema|string) => Validator`
+
 Returns true only if passed value is object and has valid props and has not any additional properties.
 
 ```javascript
@@ -757,173 +981,6 @@ Returns true only if passed value is object and has valid props and has not any 
   onlyANumber({ a: 1 }) // => true
   onlyANumber({ a: '1' }) // => false
   onlyANumber({ a: 1, b: 2 }) // => false
-```
-
-# Fix Methods
-
-Fix methods takes validators and returns validator with side-effect of recording how to fix invalidation. And after validation we can use method `v.fix(invalidValue) => validValue` to fix errors.
-
-### Warning: if there is fix of child and fix of parent - only parent fix will be applied:
-
-```javascript
-  const isObjectValid = v(v.default({
-    child: v.default('string', '')
-  }), {})
-  const obj = { child: 1 }
-  isObjectValid(obj)
-  v.fix(obj) // => {}
-```
-
-## `v.fix :: (value: any) => any`
-
-It gets all fixes added by fix methods and applies it on `value`. Returns new value with all fixes applied. It's pure function.
-
-
-There three main fix methods: filter, default, addFix.
-
-## `v.filter :: (schema) => Validator`
-
-Takes validator and returns new validator with side effect: if value is invalid - it will be removed with using `v.fix` from parent (object or array)
-
-```javascript
- const obj = {
-   arr: [1,2,'3',4,5]
-   obj: {
-     a: 1, // must be removed
-     b: 2, // not removed
-     c: '3', // must be removed
-     d: 'string' // not removed
-   }
- }
- v.resetExlanation()({
-  arr: v.arrayOf(v.filter('number')),
-  obj: {
-    a: v.filter('string'),
-    d: v.filter('string')
-    ...v.rest(v.filter('number'))
-  }
- })(obj) // => false
- console.log(v.hasFixes()) // => true
- console.log(v.fix(obj)) // => { arr: [1,2,4,5], obj: { b: 2, d: 'string' } }
-```
-
-## `v.default :: (schema, defaultValue) => Validator`
-
-Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
-
-```javascript
- const obj = {
-   arr: [1,2,'3',4,5]
-   obj: {
-     a: 1, // must be removed
-     b: 2, // not removed
-     c: '3', // must be removed
-     d: 'string' // not removed
-   }
- }
- v.resetExlanation()({
-  arr: v.arrayOf(v.default('number', 0)),
-  obj: {
-    a: v.default('string', ''),
-    ...v.rest(v.default('number'))
-    d: v.default('number', 0)
-  }
- })(obj) // => false
- console.log(v.hasFixes()) // => true
- console.log(v.fix(obj)) // => { arr: [1,2,0,4,5], obj: { a: '', b: 2, c: 0, d: 'string' } }
-```
-
-## `v.addFix :: (schema, fixFunction) => Validator`
-
-Takes validator and returns new validator with side effect: if value is invalid - it will be replaced with using `v.fix` by default value.
-
-```javascript
- const arr = [1,2,'3',4,5]
- v.resetExlanation()
- const toNumber = (v, { key, parent }) => { // changes value to number
-   parent[key] = Number(v) // we need to change by parent reference in order to mutate fix result
- }
- v(v.arrayOf(v.addFix('number', toNumber))(obj) // => false
- console.log(v.hasFixes()) // => true
- console.log(v.fix(obj)) // => [1,2,3,4,5]
-```
-
-## `v.fromConfig :: (config: Config) => Validator`
-
-```javascript
-@typedef Config {{
-  validator: Schema, 
-  explanation?: any|function(): any // not required
-  examples?: []any,
-  // one of the next fix params
-  default: any,
-  filter: any,
-  fix: function(invalidValue, { key, parent}, ...): void // mutate parent to fix error
-}}
-```
-
-`fromConfig` is used to set validator, examples, explanation and fix at one config.
-
-Example:
-
-```javascript
-const arr = [1, 2, 3, 4, '5', '6', 7]
-const isElementValid = v.fromConfig({
-  validator: 'number',
-  explanation: (value, { key }) => `${key}th element is not a number: ${JSON.stringify(value)}`,
-  fix: (invalidValue, { key, parent }) => {
-    parent[key] = Number(invalidValue)
-  }
-})
-
-const isArrValid = v.fromConfig({
-  validator: v.arrayOf(isElementValid),
-  explanation: 'Not valid array'
-})
-
-v()
-
-isArrValid(arr) // => false
-
-console.log(v.hasFixes()) // => true
-console.log(v.explanation) // => [ '4th element is not a number: "5"','5th element is not a number: "6"', 'Not valid array' ]
-console.log(v.fix(arr)) // => [ 1, 2, 3, 4, 5, 6, 7 ]
-```
-
-## v.example :: (schema: Schema, ...examples: any) => Validator |  throws TypeError
-
-If examples are not valid by schema - it will throw an erorr.
-It will return schema otherwise.
-
-```javascript
-v.example('number', 1,2,3,4, '4', '5', '6')
-//> throws error
-
-v.example(['number', 'string'], 1,2,3,4, '4', '5', '6')
-//> returns schema ['number', 'string']
-```
-
-It can be use as test for schema, and for documentation:
-
-```javascript
-  const personValidator = v.example(
-    {
-      name: v.and('not-empty', 'string'),
-      age: v.and('positive', 'number'),
-      position: 'string'
-    },
-    {
-      name: 'Max Karpenko',
-      age: 30,
-      position: 'Frontend Developer'
-    }
-  )
-  personValidator({
-    name: 'Max Karpenko',
-    age: 30,
-    position: 'Frontend Developer'
-  }) // => true
-
 ```
 
 # Tips and Tricks
