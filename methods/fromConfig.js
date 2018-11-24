@@ -1,5 +1,5 @@
-const validate = require('./validate')
-const addExtension = require('./validatorExtension')
+const validate = require('../validate')
+const addExtension = require('../validatorExtension')
 const { isnt } = validate
 
 const VALIDATOR_PROP_NAME = 'validator'

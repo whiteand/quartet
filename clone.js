@@ -1,10 +1,11 @@
 // This clone function was taken from ramda.
 function type (val) {
-  return val === null
-    ? 'Null'
-    : val === undefined
-      ? 'Undefined'
-      : Object.prototype.toString.call(val).slice(8, -1)
+  if (val === null) return 'Null'
+
+  return val === undefined
+    ? 'Undefined'
+    : Object.prototype.toString.call(val)
+      .slice(8, -1)
 }
 const keys = {
   global: 'g',
