@@ -1,8 +1,7 @@
 {
   "name": "quartet",
-  "version": "6.3.5",
-  "description": "Validation library: functional, convenient and compositional",
-  "main": "./src/index.js",
+  "version": "6.3.6",
+  "description": "Validation library: functional, convenient and compositional",  "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
     "test": "jest",
