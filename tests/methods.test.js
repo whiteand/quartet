@@ -181,45 +181,49 @@ describe('explain', () => {
   })
   test('custom explanation - not function', () => {
     v.clearContext()
+    const WRONG_NAME_MESSAGE = 'wrong name';
+    const WRONG_AGE_MESSAGE = 'wrong age'
     const isValidPerson = v({
-      name: v.explain('string', 'wrong name'),
-      age: v.explain('number', 'wrong age')
+      name: v.explain('string', WRONG_NAME_MESSAGE),
+      age: v.explain('number', WRONG_AGE_MESSAGE)
     })
     isValidPerson({
       name: 'andrew'
     })
-    expect(v.explanation).toEqual(['wrong age'])
+    expect(v.explanation).toEqual([WRONG_AGE_MESSAGE])
 
     v()
     isValidPerson({
       age: 12
     })
-    expect(v.explanation).toEqual(['wrong name'])
+    expect(v.explanation).toEqual([WRONG_NAME_MESSAGE])
 
     v()
     isValidPerson({})
-    expect(v.explanation).toEqual(['wrong name', 'wrong age'])
+    expect(v.explanation).toEqual([WRONG_NAME_MESSAGE, WRONG_AGE_MESSAGE])
   })
   test('custom explanation - not function with alias v(schema, explanation)', () => {
     v.clearContext()
+    const WRONG_NAME_MESSAGE = 'wrong name'
+    const WRONG_AGE_MESSAGE = 'wrong age'
     const isValidPerson = v({
-      name: v('string', 'wrong name'),
-      age: v('number', 'wrong age')
+      name: v('string', WRONG_NAME_MESSAGE),
+      age: v('number', WRONG_AGE_MESSAGE)
     })
     isValidPerson({
       name: 'andrew'
     })
-    expect(v.explanation).toEqual(['wrong age'])
+    expect(v.explanation).toEqual([WRONG_AGE_MESSAGE])
 
     v()
     isValidPerson({
       age: 12
     })
-    expect(v.explanation).toEqual(['wrong name'])
+    expect(v.explanation).toEqual([WRONG_NAME_MESSAGE])
 
     v()
     isValidPerson({})
-    expect(v.explanation).toEqual(['wrong name', 'wrong age'])
+    expect(v.explanation).toEqual([WRONG_NAME_MESSAGE, WRONG_AGE_MESSAGE])
   })
   test('custom explanation - function', () => {
     v()

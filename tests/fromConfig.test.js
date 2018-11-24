@@ -3,15 +3,16 @@ const quartet = require('../index')
 let v = quartet()
 
 describe('fromConfig', () => {
+  const NOT_OBJECT_CONFIG_MESSAGE = 'config must be an object'
   test('not object config', () => {
     expect(() => v.fromConfig(null)).toThrowError(
-      new TypeError('config must be an object')
+      new TypeError(NOT_OBJECT_CONFIG_MESSAGE)
     )
     expect(() => v.fromConfig(1)).toThrowError(
-      new TypeError('config must be an object')
+      new TypeError(NOT_OBJECT_CONFIG_MESSAGE)
     )
     expect(() => v.fromConfig(() => {})).toThrowError(
-      new TypeError('config must be an object')
+      new TypeError(NOT_OBJECT_CONFIG_MESSAGE)
     )
   })
   test('without validator props', () => {
