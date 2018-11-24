@@ -1,5 +1,5 @@
 
-module.exports = (expect, test) => {
+const getTestValidator = (expect, test) => {
   expect.extend({
     toBeTrueValueOf (received, isValid, validatorName) {
       const pass = isValid(received) === true
@@ -35,3 +35,7 @@ module.exports = (expect, test) => {
     })
   }
 }
+test("getTestValidator", () => {
+  expect(typeof getTestValidator).toBe('function')
+})
+module.exports = getTestValidator

@@ -3,7 +3,7 @@ const quartet = require('../index')
 let v = quartet()
 global.console.log = jest.fn()
 
-const testValidator = require('./testValidator')(expect, test)
+const testValidator = require('./testValidator.test')(expect, test)
 
 describe('stringCheck function', () => {
   test('right name of schema', () => {

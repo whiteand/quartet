@@ -2,7 +2,7 @@
 const quartet = require('../index')
 let v = quartet()
 
-const testValidator = require('./testValidator')(expect, test)
+const testValidator = require('./testValidator.test')(expect, test)
 
 const isPrime = n => {
   if (n < 2) return false
