@@ -1,5 +1,5 @@
 /* global test, jest, expect, describe */
-const quartet = require('../index')
+const quartet = require('../src/index')
 let v = quartet()
 global.console.log = jest.fn()
 

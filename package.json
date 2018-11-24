@@ -2,8 +2,16 @@
   "name": "quartet",
   "version": "6.3.4",
   "description": "Validation library: functional, convenient and compositional",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "jest": {
+    "testResultsProcessor": "jest-sonar-reporter"
+  },
+  "jestSonar": {
+    "reportPath": "reports",
+    "reportFile": "test-reporter.xml",
+    "indent": 4
+  },
   "scripts": {
     "test": "jest",
     "test-coverage": "jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rmdir /s /q ./coverage"
@@ -25,6 +33,7 @@
     "eslint-plugin-node": "^8.0.0",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
-    "jest": "^23.6.0"
+    "jest": "^23.6.0",
+    "jest-sonar-reporter": "^2.0.0"
   }
 }

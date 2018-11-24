@@ -1,6 +1,8 @@
 
 /* global test, expect */
-const quartet = require('../index')
+const quartet = require('../src/index')
+const { FIX_TREE } = require('../src/symbols')
+const { FIX_TYPES } = require('../src/fixTree')
 let v = quartet()
 
 test('empty fixes, must deep clone', () => {
@@ -162,8 +164,6 @@ test('mixed', () => {
   v(v.arrayOf(v.default('number', 0)))({
     a: [1, 2, '4', 3]
   })
-  const { FIX_TREE } = require('../symbols')
-  const { FIX_TYPES } = require('../fixTree')
 
   expect(v[FIX_TREE]).toEqual({
     children: {

@@ -1,5 +1,5 @@
 /* global test, expect, describe */
-const clone = require('../clone')
+const clone = require('../src/clone')
 describe('Clone test', () => {
   test('primitives', () => {
     expect(clone(1)).toBe(1)

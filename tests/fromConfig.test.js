@@ -1,5 +1,5 @@
 /* global test, expect, describe */
-const quartet = require('../index')
+const quartet = require('../src/index')
 let v = quartet()
 
 describe('fromConfig', () => {

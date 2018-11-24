@@ -1,5 +1,5 @@
 /* global test, jest, expect, describe */
-const quartet = require('../index')
+const quartet = require('../src/index')
 let v = quartet()
 
 const testValidator = require('./testValidator.test')(expect, test)
@@ -12,6 +12,8 @@ const isPrime = n => {
   }
   return true
 }
+
+const NOT_VALID_NUMBER_MESSAGE = 'not valid number'
 
 // METHODS
 
@@ -496,7 +498,7 @@ testValidator({
 describe('throwError', () => {
   test('valid', () => {
     const validNumber = 1
-    expect(v.throwError('number', 'not valid number')(validNumber)).toBe(
+    expect(v.throwError('number', NOT_VALID_NUMBER_MESSAGE)(validNumber)).toBe(
       validNumber
     )
   })
@@ -509,8 +511,8 @@ describe('throwError', () => {
   test('invalid message is string', () => {
     const invalidNumber = '1'
     expect(() =>
-      v.throwError('number', 'not valid number')(invalidNumber)
-    ).toThrowError(new TypeError('not valid number'))
+      v.throwError('number', NOT_VALID_NUMBER_MESSAGE)(invalidNumber)
+    ).toThrowError(new TypeError(NOT_VALID_NUMBER_MESSAGE))
   })
   test('invalid message is function', () => {
     const validNumber = '1'
