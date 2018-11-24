@@ -987,6 +987,7 @@ _____________________________________________________________
 ## API Docs
 
 All methods and possibilities described [here](https://github.com/whiteand/quartet/blob/master/API.md)
+
 _____________________________________________________________
 
 ## Other Solutions
