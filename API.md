@@ -21,7 +21,7 @@ Library for validations: beautiful and convenient
   - [Object validation](#object-validation)
   - [Registered validations](#registered-validations)
 - [Default registered validators](#default-registered-validators)
-- [Methods](#methods)
+- [API](#api)
 - [Fix Methods](#fix-methods)
 - [Tips and Tricks](#tips-and-tricks)
 #  Example
