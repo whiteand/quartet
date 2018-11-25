@@ -450,7 +450,7 @@ type Schema = string | AlternativeSchema | ObjectSchema | Validator;
 
 type Explanation = any | FromParams<any>;
 
-type SchmaDict = { [name: string]: Schema }
+type SchemaDict = { [name: string]: Schema }
 
 interface CompilerSettings {
   registered: SchemaDict,
