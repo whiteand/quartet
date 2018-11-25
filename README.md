@@ -10,7 +10,7 @@
 
 # Data Validation Practise for Frontend
 
-> If you want to know how to validate forms in Vue - this article, is not for you. You should use some standard Vue plugins such as [vuelidate](https://monterail.github.io/vuelidate/)
+> If you want to know how to validate forms in Vue - this article is not for you. You should use some standard Vue plugins such as [vuelidate](https://monterail.github.io/vuelidate/)
 >
 > My advice: validation schema must be placed in the component that will submit the form.
 
@@ -44,7 +44,7 @@ _____________________________________________________________
 
 ## Solution Requirements
 
-For almost all solution there are more or less useful solutions.  And for our problem we set these goals to be achieved:
+For almost all problems there are more or less useful solutions.  And for our problem we set these goals to be achieved:
 
 - Validation of types(number, object, array, string, null, undefined,...)
 - Custom validation rules;
