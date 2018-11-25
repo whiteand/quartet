@@ -12,7 +12,7 @@ declare interface AlternativeSchema extends Array<Schema> {
 declare type Schema = string | AlternativeSchema | ObjectSchema | Validator
 declare type Explanation = any | FromParams<any>
 declare interface Compiler {
-  (schema: Schema, explanation?: Explanation): Validator
+  (schema?: Schema, explanation?: Explanation): Validator
 }
 type CommonConfig = {
   validator: Schema,
