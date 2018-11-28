@@ -72,6 +72,7 @@ declare interface Compiler {
   throwError: (schema: Schema, errorMessage: string|FromParams<string>) => (value: any) => any,
   validOr: (schema: Schema, defaultValue: any) => (value: any) => any,
   withoutAdditionalProps: (schema: ObjectSchema|string) => Validator,
+  clearContext(): void
 }
 
 declare function newCompiler(settings?: CompilerSettings): Compiler
