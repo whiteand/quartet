@@ -53,7 +53,7 @@ declare interface Compiler {
   explanation: any[],
   filter: (schema: Schema) => Validator,
   fix: (value: any) => any,
-  fromConfig: (config: Config) => Validator,
+  fromConfig: (...config: Config[]) => Validator,
   hasFixes: () => boolean,
   keys: (keySchema: Schema) => Validator,
   max: (maxValue: number) => Validator,
