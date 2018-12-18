@@ -408,7 +408,7 @@ There are such registered validators by default:
 |    'string'    |            `typeof x === 'string'`             |
 |     'null'     |               `x => x === null`                |
 |  'undefined'   |             `x => x === undefined`             |
-|     'nil'      |      `x => x === null || x === undefined`      |
+|     'nil'      |      `x => x === null \|\| x === undefined`      |
 | 'boolean'      |        `x => typeof x === 'boolean'`           |
 |    'number'    |          `x => typeof x === 'number'`          |
 | 'safe-integer' |         `x => Number.isSafeInteger(x)`         |
