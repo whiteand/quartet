@@ -1,6 +1,7 @@
-module.exports = function regex (regex) {
-  if (!(regex instanceof RegExp)) {
+const isRegularExpression = regularExpression => regularExpression && typeof regularExpression.test === 'function'
+module.exports = function regex (regularExpression) {
+  if (!isRegularExpression(regularExpression)) {
     throw new TypeError('regex can takes only RegExp instances')
   }
-  return str => regex.test(str)
+  return str => regularExpression.test(str)
 }
