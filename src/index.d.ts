@@ -38,7 +38,8 @@ declare type SchemaDict = {
 
 declare interface CompilerSettings {
   registered?: SchemaDict,
-  allErrors?: boolean
+  allErrors?: boolean,
+  defaultExplanation?: any
 }
 declare interface Compiler {
   addFix: (schema: Schema, fixFunction: FromParams<void>) => Validator,

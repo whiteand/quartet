@@ -166,12 +166,12 @@ describe('explain', () => {
   test('default explanation', () => {
     const isValid = v().explain('number')
     isValid('123')
-    expect(v.explanation).toEqual([{ value: '123', parents: [] }])
+    expect(v.explanation).toEqual([{ value: '123', parents: [], schema: 'number' }])
   })
   test('default explanation - clearContext method', () => {
     const isValid = v().explain('number')
     isValid(null)
-    expect(v.explanation).toEqual([{ value: null, parents: [] }])
+    expect(v.explanation).toEqual([{ value: null, parents: [], schema: 'number' }])
     v.clearContext() // The same as v()
     v.explain('number')(1)
     expect(v.explanation).toEqual([])
@@ -229,7 +229,7 @@ describe('explain', () => {
   })
   test('custom explanation - function', () => {
     v()
-    const explanationFunc = type => (value, { key }) =>
+    const explanationFunc = type => (value, schema, { key }) =>
       `wrong property: ${key}. Expected ${type}, but ${typeof value} get`
     const isValidPerson = v({
       name: v.explain('string', explanationFunc('string')),
@@ -570,13 +570,13 @@ describe('rest props validation', () => {
 describe('not all errors', () => {
   test('arr validation', () => {
     v = v.newCompiler({ allErrors: false })
-    const getInvalidKey = v.explain('number', (_, { key }) => key)
+    const getInvalidKey = v.explain('number', (_, schema, { key }) => key)
     v.arrayOf(getInvalidKey)([1, '2', '3'])
     expect(v.explanation).toEqual([1])
   })
   test('object validation', () => {
     v = v.newCompiler({ allErrors: false })
-    const getInvalidKey = v.explain('number', (_, { key }) => key)
+    const getInvalidKey = v.explain('number', (_, schema, { key }) => key)
     v.dictionaryOf(getInvalidKey)({
       a: 1,
       b: 2,

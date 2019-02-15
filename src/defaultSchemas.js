@@ -1,5 +1,5 @@
 const { getType } = require('./validate')
-function isEmpty (value) {
+function isEmpty(value) {
   switch (getType(value)) {
     case 'array': return value.length === 0
     case 'null': return true
