@@ -9,7 +9,7 @@
     "test-coverage": "jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rmdir /s /q ./coverage"
   },
   "keywords": [
-    "validation"
+    "validation", "functional", "convenient"
   ],
   "repository": {
     "type": "git",
