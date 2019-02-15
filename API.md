@@ -448,7 +448,8 @@ interface AlternativeSchema extends Array<Schema> {
 }
 type Schema = string | AlternativeSchema | ObjectSchema | Validator;
 
-type Explanation = any | FromParams<any>;
+type GetExplanation = (value: any, schema: Schema, ...keyParents: KeyParent[]) => any
+type Explanation = any | GetExplanation
 
 type SchemaDict = { [name: string]: Schema }
 
@@ -679,7 +680,7 @@ v.fix(obj) // returns { a: 0 }
 const arr = [1, 2, 3, 4, '5', '6', 7]
 const isElementValid = v.fromConfig({
   validator: 'number',
-  explanation: (value, { key }) => `${key}th element is not a number: ${JSON.stringify(value)}`,
+  explanation: (value, schema, { key }) => `${key}th element is not a number: ${JSON.stringify(value)}`,
   fix: (invalidValue, { key, parent }) => {
     parent[key] = Number(invalidValue)
   }

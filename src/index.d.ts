@@ -10,9 +10,11 @@ declare interface ObjectSchema {
 declare interface AlternativeSchema extends Array<Schema> {
 }
 declare type Schema = string | AlternativeSchema | ObjectSchema | Validator
-declare type Explanation = any | FromParams<any>
+declare type GetExplanation = (value: any, schema: Schema, ...keyParents: KeyParent[]) => any
+declare type Explanation = any | GetExplanation
+
 declare interface Compiler {
-  (schema?: Schema, explanation?: Explanation): Validator
+  (schema?: Schema, explanation?: Explanation, params?: { withoutDefaultExplanation?: boolean }): Validator
 }
 type CommonConfig = {
   validator: Schema,
