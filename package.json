@@ -16,7 +16,7 @@
     "url": "https://github.com/whiteand/quartet.git"
   },
   "author": "AndrewBeletskiy",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "coveralls": "^3.0.2",
     "eslint": "^5.9.0",
