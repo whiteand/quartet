@@ -6,5 +6,5 @@ module.exports = function register (additionalRegistered) {
   if (!Object.values(additionalRegistered).every(schema => this.isValidSchema(schema))) {
     throw new TypeError('some of registered schemas is invalid')
   }
-  return this.newCompiler({ allErrors: this.allErrors, registered: { ...this.registered, ...additionalRegistered } })
+  return this.newCompiler({ allErrors: this.allErrors, registered: { ...this.registered, ...additionalRegistered }, defaultExplanation: this.defaultExplanation })
 }
