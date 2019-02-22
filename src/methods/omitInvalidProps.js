@@ -1,8 +1,10 @@
 const { isnt, is } = require('../validate')
 const { REST_PROPS } = require('../symbols')
 const ParentKey = require('../ParentKey')
+const addMetaData = require('../addMetaData')
+const TYPES = require('../types')
 
-function validateParams (objSchema, settings) {
+function validateParams(objSchema, settings) {
   if (isnt(settings)('object')) {
     throw new TypeError('settings must be object')
   }
@@ -12,7 +14,7 @@ function validateParams (objSchema, settings) {
     )
   }
 }
-function getFinalObjectSchema (objSchema, that) {
+function getFinalObjectSchema(objSchema, that) {
   while (isnt(objSchema)('object') && is(objSchema)('string')) {
     objSchema = that.registered[objSchema]
   }
@@ -22,7 +24,7 @@ function getFinalObjectSchema (objSchema, that) {
   return objSchema
 }
 
-function omitUncheckedOrUncheckedEmpty (obj, parents, finalObjSchema) {
+function omitUncheckedOrUncheckedEmpty(obj, parents, finalObjSchema) {
   const restValidator = finalObjSchema[REST_PROPS]
     ? this(finalObjSchema[REST_PROPS])
     : null
@@ -48,27 +50,31 @@ function omitUncheckedOrUncheckedEmpty (obj, parents, finalObjSchema) {
   return newObj
 }
 
-module.exports = function omitInvalidProps (objSchema, settings = { omitUnchecked: true }) {
+module.exports = function omitInvalidProps(objSchema, settings = { omitUnchecked: true }) {
   validateParams(objSchema, settings)
   const { omitUnchecked: omitUnchecked = true } = settings
   const finalObjSchema = getFinalObjectSchema(objSchema, this)
-  return (obj, ...parents) => {
-    if (isnt(obj)('object')) {
-      return obj
-    }
+  return addMetaData(
+    (obj, ...parents) => {
+      if (isnt(obj)('object')) {
+        return obj
+      }
 
-    if (!omitUnchecked || finalObjSchema[REST_PROPS]) {
-      return omitUncheckedOrUncheckedEmpty.bind(this)(obj, parents, finalObjSchema)
-    }
+      if (!omitUnchecked || finalObjSchema[REST_PROPS]) {
+        return omitUncheckedOrUncheckedEmpty.bind(this)(obj, parents, finalObjSchema)
+      }
 
-    return Object.entries(finalObjSchema)
-      .filter(([key, schema]) => {
-        const value = obj[key]
-        return this(schema)(value, new ParentKey(obj, key), ...parents)
-      })
-      .reduce((res, [key]) => {
-        res[key] = obj[key]
-        return res
-      }, {})
-  }
+      return Object.entries(finalObjSchema)
+        .filter(([key, schema]) => {
+          const value = obj[key]
+          return this(schema)(value, new ParentKey(obj, key), ...parents)
+        })
+        .reduce((res, [key]) => {
+          res[key] = obj[key]
+          return res
+        }, {})
+    },
+    TYPES.OMIT_INVALID_PROPS,
+    { schema: objSchema, settings }
+  )
 }

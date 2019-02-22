@@ -1,6 +1,7 @@
 const validate = require('../validate')
 const { is } = validate
-
+const addMetaData = require('../addMetaData')
+const TYPES = require('../types')
 const requiredValidator = (_, parentAndKey) => {
   if (!parentAndKey) {
     return true
@@ -8,7 +9,7 @@ const requiredValidator = (_, parentAndKey) => {
   return Object.prototype.hasOwnProperty.call(parentAndKey.parent, parentAndKey.key)
 }
 
-module.exports = function requiredIf (schema) {
+module.exports = function requiredIf(schema) {
   if (is(schema)('boolean')) {
     return schema
       ? requiredValidator
@@ -16,10 +17,14 @@ module.exports = function requiredIf (schema) {
   }
   validate.schema(schema)
   const isValid = this(schema)
-  return (value, ...parents) => {
-    const isRequired = isValid(value, ...parents)
-    return isRequired
-      ? requiredValidator(value, ...parents)
-      : true
-  }
+  return addMetaData(
+    (value, ...parents) => {
+      const isRequired = isValid(value, ...parents)
+      return isRequired
+        ? requiredValidator(value, ...parents)
+        : true
+    },
+    TYPES.REQUIRED_IF,
+    { schema }
+  )
 }

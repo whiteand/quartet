@@ -1,12 +1,17 @@
 const validate = require('./validate')
 const { getType, is } = validate
 const ParentKey = require('./ParentKey')
-
+const addMetaData = require('./addMetaData')
+const TYPES = require('./types')
 const { REST_PROPS } = require('./symbols')
 
 function compileFunction(f, ctx) {
   const bindedF = f.bind(ctx)
-  return (value, ...parents) => bindedF(value, ...parents)
+  return addMetaData(
+    (value, ...parents) => bindedF(value, ...parents),
+    TYPES.FUNCTION,
+    { schema: f, ctx }
+  )
 }
 
 function compileString(name, ctx) {
@@ -15,12 +20,20 @@ function compileString(name, ctx) {
   if (!isRegistered) {
     throw new TypeError(`'${name}' is not a registered schema`)
   }
-  return ctx(registered[name])
+  return addMetaData(
+    ctx(registered[name]),
+    TYPES.REGISTERED,
+    { schema: name, ctx }
+  )
 }
 
 const compileOr = (arr, ctx) => {
   arr.forEach(validate.schema)
-  return (value, ...parents) => arr.some(schema => ctx(schema)(value, ...parents))
+  return addMetaData(
+    (value, ...parents) => arr.some(schema => ctx(schema)(value, ...parents)),
+    TYPES.ALTERNATIVE,
+    { schema: arr, ctx }
+  )
 }
 const validateObjectToFirstInvalid = (ctx, objSchema, obj, ...parents) => {
   for (const [key, innerSchema] of Object.entries(objSchema)) {
@@ -40,7 +53,7 @@ const validateObjectToFirstInvalid = (ctx, objSchema, obj, ...parents) => {
     .every(([key, value]) => isValidRest(value, new ParentKey(obj, key), ...parents))
 }
 const compileObj = (objSchema, ctx) => {
-  return (obj, ...parents) => {
+  const validator = (obj, ...parents) => {
     if (!obj) {
       return false
     }
@@ -70,6 +83,11 @@ const compileObj = (objSchema, ctx) => {
     }
     return objValid
   }
+  return addMetaData(
+    validator,
+    TYPES.OBJECT,
+    { schema: objSchema }
+  )
 }
 
 const compilers = {

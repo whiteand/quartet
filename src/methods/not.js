@@ -1,6 +1,12 @@
 const validate = require('../validate')
-module.exports = function not (schema) {
+const addMetaData = require('../addMetaData')
+const TYPES = require('../types')
+module.exports = function not(schema) {
   validate.schema(schema)
   const isValid = this(schema)
-  return (value, ...parents) => !isValid(value, ...parents)
+  return addMetaData(
+    (value, ...parents) => !isValid(value, ...parents),
+    TYPES.NOT,
+    { schema }
+  )
 }

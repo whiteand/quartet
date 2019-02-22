@@ -1,11 +1,17 @@
 const validate = require('../validate')
-module.exports = function validOr (schema, defaultValue) {
+const addMetaData = require('../addMetaData')
+const TYPES = require('../types')
+module.exports = function validOr(schema, defaultValue) {
   validate.schema(schema)
   const isValid = this(schema)
-  return (value, ...parents) => {
-    if (!isValid(value, ...parents)) {
-      return defaultValue
-    }
-    return value
-  }
+  return addMetaData(
+    (value, ...parents) => {
+      if (!isValid(value, ...parents)) {
+        return defaultValue
+      }
+      return value
+    },
+    TYPES.VALID_OR,
+    { schema, defaultValue }
+  )
 }

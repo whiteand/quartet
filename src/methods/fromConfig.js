@@ -1,6 +1,8 @@
 const validate = require('../validate')
 const addExtension = require('../validatorExtension')
 const { isnt } = validate
+const addMetaData = require('../addMetaData')
+const TYPES = require('../types')
 
 const VALIDATOR_PROP_NAME = 'validator'
 
@@ -59,7 +61,11 @@ const fromConfig = function (config) {
 
 module.exports = function (...configs) {
   const validations = configs.map(fromConfig.bind(this))
-  return (value, ...parents) => {
-    return validations.every(f => f(value, ...parents))
-  }
+  return addMetaData(
+    (value, ...parents) => {
+      return validations.every(f => f(value, ...parents))
+    },
+    TYPES.FROM_CONFIG,
+    { schema: configs }
+  )
 }

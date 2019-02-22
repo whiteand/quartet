@@ -6,11 +6,14 @@ const getDefaultMethods = require('./defaultMethods')
 const { FIX_TREE } = require('./symbols')
 const { fixTree, VALUE_KEY } = require('./fixTree')
 const compile = require('./compile')
+const TYPES = require('./types')
+const typesEntries = Object.entries(TYPES)
 
 const getDefaultSettings = () => ({
   registered: getDefaultRegisteredSchemas(),
   allErrors: true,
-  ...getDefaultMethods()
+  ...getDefaultMethods(),
+  ...TYPES
 })
 
 function newCompiler (settings) {
@@ -51,4 +54,10 @@ function newCompiler (settings) {
   return context
 }
 
+
+
+for (let i = 0; i < typesEntries.length; i++) {
+  const [key, value] = typesEntries[i]
+  newCompiler[key] = value
+}
 module.exports = newCompiler

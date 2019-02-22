@@ -1,5 +1,7 @@
 const validate = require('../validate')
 const { is } = validate
+const addMetaData = require('../addMetaData')
+const TYPES = require('../types')
 module.exports = function explain (
   schema,
   getExplanation = (value, schema, ...parents) => ({ value, parents, schema })
@@ -25,5 +27,9 @@ module.exports = function explain (
   }
   innerClearContext()
   f.clearContext = innerClearContext
-  return f
+  return addMetaData(
+    f,
+    TYPES.EXPLAIN,
+    { schema, explanation: getExplanation }
+  )
 }
