@@ -1,6 +1,6 @@
 {
   "name": "quartet",
-  "version": "7.0.2",
+  "version": "7.0.3",
   "description": "Validation library: functional, convenient and compositional",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
@@ -9,7 +9,9 @@
     "test-coverage": "jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rmdir /s /q ./coverage"
   },
   "keywords": [
-    "validation", "functional", "convenient"
+    "validation",
+    "functional",
+    "convenient"
   ],
   "repository": {
     "type": "git",

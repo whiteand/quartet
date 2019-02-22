@@ -12,8 +12,7 @@ const typesEntries = Object.entries(TYPES)
 const getDefaultSettings = () => ({
   registered: getDefaultRegisteredSchemas(),
   allErrors: true,
-  ...getDefaultMethods(),
-  ...TYPES
+  ...getDefaultMethods()
 })
 
 function newCompiler (settings) {
@@ -44,6 +43,9 @@ function newCompiler (settings) {
       ? value.bind(context)
       : value
   }
+  for (const [key, value] of Object.entries(TYPES)) {
+    context[key] = value
+  }
   context.newCompiler = newCompiler
   context.clearContext = () => {
     context.explanation = []
@@ -53,8 +55,6 @@ function newCompiler (settings) {
   context.clearContext()
   return context
 }
-
-
 
 for (let i = 0; i < typesEntries.length; i++) {
   const [key, value] = typesEntries[i]

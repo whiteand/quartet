@@ -5,7 +5,7 @@ const addMetaData = require('./addMetaData')
 const TYPES = require('./types')
 const { REST_PROPS } = require('./symbols')
 
-function compileFunction(f, ctx) {
+function compileFunction (f, ctx) {
   const bindedF = f.bind(ctx)
   return addMetaData(
     (value, ...parents) => bindedF(value, ...parents),
@@ -14,7 +14,7 @@ function compileFunction(f, ctx) {
   )
 }
 
-function compileString(name, ctx) {
+function compileString (name, ctx) {
   const { registered } = ctx
   const isRegistered = registered[name]
   if (!isRegistered) {

@@ -41,7 +41,7 @@ declare type SchemaDict = {
 declare interface CompilerSettings {
   registered?: SchemaDict,
   allErrors?: boolean,
-  defaultExplanation?: any
+  defaultExplanation?: Explanation
 }
 declare interface Compiler {
   addFix: (schema: Schema, fixFunction: FromParams<void>) => Validator,
@@ -76,6 +76,32 @@ declare interface Compiler {
   validOr: (schema: Schema, defaultValue: any) => (value: any) => any,
   withoutAdditionalProps: (schema: ObjectSchema|string) => Validator,
   clearContext(): void
+  FUNCTION: string
+  ALTERNATIVE: string
+  OBJECT: string
+  REGISTERED: string
+  ADD_FIX: string
+  AND: string
+  ARRAY_OF: string
+  DEFAULT: string
+  DICTIONARY_OF: string
+  ENUM: string
+  EXPLAIN: string
+  FILTER: string
+  FROM_CONFIG: string
+  KEYS: string
+  MAX: string
+  MIN: string
+  NOT: string
+  OMIT_INVALID_ITEMS: string
+  OMIT_INVALID_PROPS: string
+  PARENT: string
+  REGEX: string
+  REQUIRED: string
+  REQUIRED_IF: string
+  THROW_ERROR: string
+  VALID_OR: string
+  WITHOUT_ADDITIONAL_PROPS: string
 }
 
 declare function newCompiler(settings?: CompilerSettings): Compiler
