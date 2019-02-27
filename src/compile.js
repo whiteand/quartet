@@ -54,7 +54,7 @@ const validateObjectToFirstInvalid = (ctx, objSchema, obj, ...parents) => {
 }
 const compileObj = (objSchema, ctx) => {
   const validator = (obj, ...parents) => {
-    if (!obj) {
+    if (obj === null || obj === undefined) {
       return false
     }
     if (!ctx.allErrors) {
