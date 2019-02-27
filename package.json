@@ -1,6 +1,6 @@
 {
   "name": "quartet",
-  "version": "7.0.3",
+  "version": "7.0.4",
   "description": "Validation library: functional, convenient and compositional",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
